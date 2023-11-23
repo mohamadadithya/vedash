@@ -2,6 +2,7 @@
   "name": "vedash",
   "version": "0.0.1",
   "devDependencies": {
+    "@svelte-put/clickoutside": "^3.0.1",
     "@sveltejs/adapter-auto": "^2.0.0",
     "@sveltejs/kit": "^1.27.4",
     "@sveltejs/package": "^2.0.0",
@@ -54,6 +55,8 @@
   "type": "module",
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "lucide-svelte": "^0.292.0"
+    "@floating-ui/core": "^1.5.0",
+    "lucide-svelte": "^0.292.0",
+    "svelte-floating-ui": "^1.5.6"
   }
 }

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { writable, type Writable } from 'svelte/store';
 	import {
 		FastForward,
 		Fullscreen,
@@ -11,73 +10,74 @@
 		Volume2,
 		VolumeX
 	} from 'lucide-svelte';
-	import { onMount } from 'svelte';
 	import { formatDuration } from '$lib/utils.js';
+	import { setStates, getStates } from './context.js';
+	import MenuPanel from './MenuPanel.svelte';
+	import { fade } from 'svelte/transition';
 
-	const duration: Writable<number> = writable(0);
-	const volume: Writable<number> = writable(1);
-	const totalDuration: Writable<number> = writable(0);
-	const isPaused: Writable<boolean> = writable(true);
-	const isShowControls: Writable<boolean> = writable(true);
-	const isFullscreen: Writable<boolean> = writable(false);
+	setStates();
+	const {
+		currentTime,
+		volume,
+		totalDuration,
+		isPaused,
+		isShowControls,
+		isFullscreen,
+		isSeeking,
+		playbackRate,
+		isMuted
+	} = getStates();
 
-	let videoEl: HTMLVideoElement, playerEl: HTMLDivElement;
-
-	onMount(() => {
-		if (videoEl) $totalDuration = videoEl.duration;
-	});
-
-	const toggleVideo = () => {
-		if (videoEl.paused) {
-			$isPaused = false;
-			videoEl.play();
-		} else {
-			$isPaused = true;
-			videoEl.pause();
-		}
-	};
-
-	const updateDuration = (event: Event) => {
-		const videoEl = event.target as HTMLVideoElement;
-		$duration = videoEl.currentTime;
-	};
+	let playerEl: HTMLDivElement;
 
 	const updateVolume = (event: Event) => {
 		const inputEl = event.target as HTMLInputElement;
 		const { value } = inputEl;
 
 		$volume = +value;
-		if ($volume > 0) videoEl.muted = false;
-
-		videoEl.volume = $volume;
+		if ($volume > 0) $isMuted = false;
 	};
 
-	const updateCurrentTime = (event: Event) => {
+	const updateCurrentTime = async (event: Event) => {
 		const inputEl = event.target as HTMLInputElement;
 		const { value } = inputEl;
-		$duration = +value;
 
-		videoEl.currentTime = $duration;
+		$isPaused = true;
+		$isSeeking = true;
+		$currentTime = +value;
+
+		await videoEl.pause();
+		videoEl.currentTime = $currentTime;
 	};
 
 	const toggleMute = () => {
-		if (videoEl.muted) {
-			videoEl.muted = false;
+		if ($isMuted) {
+			$isMuted = false;
 			$volume = 1;
-			videoEl.volume = $volume;
 		} else {
 			if ($volume === 0) {
 				$volume = 1;
-				videoEl.volume = $volume;
 			} else {
-				videoEl.muted = true;
+				$isMuted = true;
 				$volume = 0;
-				videoEl.volume = $volume;
 			}
 		}
 	};
 
-	const openFullscreen = () => {
+	let videoEl: HTMLVideoElement;
+
+	const togglePlay = () => {
+		if (videoEl.paused) {
+			videoEl.play();
+			$isPaused = false;
+		} else {
+			videoEl.pause();
+			$isPaused = true;
+			$isShowControls = true;
+		}
+	};
+
+	const toggleFullscreen = () => {
 		if (!document.fullscreenElement) {
 			playerEl.requestFullscreen();
 		} else if (document.exitFullscreen) {
@@ -92,93 +92,198 @@
 			$isFullscreen = false;
 		}
 	};
+
+	const seekedVideo = async () => {
+		await togglePlay();
+
+		$isSeeking = false;
+		$volume = 1;
+	};
+
+	const playbackSpeeds = [0.5, 1, 1.5, 2].reverse();
+	const qualities = [360, 480, 720, 1080];
+
+	const setPlaybackSpeed = (event: CustomEvent) => {
+		const speed = event.detail.data;
+		$playbackRate = +speed!;
+	};
+
+	const setShortcuts = (event: KeyboardEvent) => {
+		const activeElement = document.activeElement as HTMLElement;
+
+		switch (event.code) {
+			case 'Space':
+				togglePlay();
+				break;
+			case 'KeyM':
+				toggleMute();
+				break;
+			case 'KeyF':
+				toggleFullscreen();
+				break;
+			case 'ArrowRight':
+				if (activeElement.id !== 'volume') $currentTime += 10;
+				videoEl.currentTime = $currentTime;
+				break;
+			case 'ArrowLeft':
+				if (activeElement.id !== 'volume') $currentTime -= 10;
+				videoEl.currentTime = $currentTime;
+				break;
+		}
+	};
+
+	const setCurrentTime = (event: Event) => {
+		const videoEl = event.target as HTMLVideoElement;
+		$currentTime = videoEl.currentTime;
+	};
+
+	const handleMouseEnter = () => {
+		$isShowControls = true;
+
+		let idleTimer: ReturnType<typeof setTimeout>,
+			idleState = false,
+			time = 3000;
+
+		const handleIdle = (event: Event) => {
+			const targetEl = event.target as HTMLElement;
+			const controlsEl = targetEl.closest('.vedash__controls');
+
+			clearTimeout(idleTimer);
+
+			if (idleState) $isShowControls = true;
+
+			idleState = false;
+			idleTimer = setTimeout(() => {
+				if (!controlsEl && !$isPaused) {
+					$isShowControls = false;
+					idleState = true;
+				}
+			}, time);
+		};
+
+		document.addEventListener('mousemove', handleIdle);
+	};
+
+	const handleMouseLeave = () => {
+		if ($isPaused) {
+			$isShowControls = true;
+		} else {
+			document.addEventListener('mousemove', (event: Event) => {
+				const targetEl = event.target as HTMLElement;
+				const controlsEl = targetEl.closest('.vedash__controls');
+				const videoEl = targetEl.closest('.vedash__video');
+
+				if (!controlsEl && !videoEl && !$isPaused) {
+					$isShowControls = false;
+				}
+			});
+		}
+	};
 </script>
+
+<svelte:window on:keydown={setShortcuts} />
 
 <div bind:this={playerEl} class="relative text-white" on:fullscreenchange={updateFullscreenState}>
 	<video
 		bind:this={videoEl}
 		preload="auto"
 		disablepictureinpicture={true}
-		class="w-full h-full"
+		class="w-full h-full vedash__video"
 		src="/videos/example.mp4"
 		controlslist="nodownload"
 		crossorigin="anonymous"
-		on:click={toggleVideo}
-		on:timeupdate={updateDuration}
+		on:timeupdate={setCurrentTime}
+		on:click={togglePlay}
+		bind:duration={$totalDuration}
+		bind:playbackRate={$playbackRate}
+		bind:volume={$volume}
+		bind:muted={$isMuted}
+		on:mouseenter={handleMouseEnter}
+		on:mouseleave={handleMouseLeave}
 	>
 		<track kind="captions" />
 	</video>
+	{#if $isSeeking}
+		<div class="absolute w-full h-full bg-black top-0 left-0 bg-opacity-50" />
+	{/if}
 	{#if $isShowControls}
-		<div
-			class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4"
-		>
-			<button type="button" aria-label="Backward"
-				><FastForward class="-scale-x-[1] w-7 h-7 md:w-10 md:h-10" /></button
+		<div transition:fade={{ duration: 200 }} class="vedash__controls">
+			<div
+				class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4"
 			>
-			<button on:click={toggleVideo} type="button" aria-label="Play/Pause">
-				{#if $isPaused}
-					<Play class="w-7 h-7 md:w-10 md:h-10" />
-				{:else}
-					<Pause class="w-7 h-7 md:w-10 md:h-10" />
-				{/if}
-			</button>
-			<button type="button" aria-label="Forward"
-				><FastForward class="w-7 h-7 md:w-10 md:h-10" /></button
-			>
-		</div>
-		<div class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent">
-			<div class="flex items-center justify-between mb-1.5 text-sm md:text-base">
-				<p>{formatDuration($duration)}</p>
-				<p>{formatDuration($totalDuration)}</p>
+				<button type="button" aria-label="Backward"
+					><FastForward class="-scale-x-[1] w-7 h-7 md:w-10 md:h-10" /></button
+				>
+				<button on:click={togglePlay} type="button" aria-label="Play/Pause">
+					{#if $isPaused}
+						<Play class="w-7 h-7 md:w-10 md:h-10" />
+					{:else}
+						<Pause class="w-7 h-7 md:w-10 md:h-10" />
+					{/if}
+				</button>
+				<button type="button" aria-label="Forward"
+					><FastForward class="w-7 h-7 md:w-10 md:h-10" /></button
+				>
 			</div>
-			<input
-				on:input={updateCurrentTime}
-				class="w-full rounded-xl h-1 mb-2"
-				aria-label="Video duration slider"
-				type="range"
-				name="duration"
-				id="duration"
-				min={0}
-				step={0.001}
-				max={$totalDuration}
-				bind:value={$duration}
-			/>
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-2.5">
-					<button type="button" on:click={toggleMute}>
-						{#if videoEl}
-							{#if videoEl.muted || videoEl.volume === 0}
+			<div class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent">
+				<div class="flex items-center justify-between mb-1.5 text-sm">
+					<p>{formatDuration($currentTime)}</p>
+					<p>{formatDuration($totalDuration)}</p>
+				</div>
+				<input
+					on:input={updateCurrentTime}
+					on:change={seekedVideo}
+					class="w-full rounded-xl h-1 mb-2"
+					aria-label="Video duration slider"
+					type="range"
+					name="duration"
+					id="duration"
+					min={0}
+					step={0.001}
+					max={$totalDuration}
+					bind:value={$currentTime}
+				/>
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2.5">
+						<button type="button" on:click={toggleMute}>
+							{#if $isMuted || $volume === 0}
 								<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
-							{:else if videoEl.volume > 0.5}
+							{:else if $volume > 0.5}
 								<Volume2 class="w-5 h-5 md:w-6 md:h-6" />
-							{:else if videoEl.volume <= 0.5}
+							{:else if $volume <= 0.5}
 								<Volume1 class="w-5 h-5 md:w-6 md:h-6" />
 							{/if}
-						{/if}
-					</button>
-					<input
-						on:input={updateVolume}
-						class="w-full max-w-[6rem] h-0.5 rounded-xl bg-white"
-						aria-label="Volume slider"
-						type="range"
-						name="volume"
-						id="volume"
-						step={0.1}
-						min={0}
-						max={1}
-						bind:value={$volume}
-					/>
-				</div>
-				<div class="flex items-center gap-5">
-					<button type="button" class="font-semibold">1x</button>
-					<button type="button"> <Settings class="w-5 h-5 md:w-6 md:h-6" /> </button>
-					<button type="button" on:click={openFullscreen}>
-						{#if $isFullscreen}
-							<Minimize class="w-5 h-5 md:w-6 md:h-6" />
-						{:else}
-							<Fullscreen class="w-5 h-5 md:w-6 md:h-6" />
-						{/if}
-					</button>
+						</button>
+						<input
+							on:input={updateVolume}
+							class="w-full max-w-[6rem] h-0.5 rounded-xl bg-white"
+							aria-label="Volume slider"
+							type="range"
+							name="volume"
+							id="volume"
+							step={0.1}
+							min={0}
+							max={1}
+							bind:value={$volume}
+						/>
+					</div>
+					<div class="flex items-center gap-5">
+						<MenuPanel title="Kecepatan" items={playbackSpeeds} on:change={setPlaybackSpeed}>
+							<span slot="trigger-button" class="font-semibold text-lg md:text-xl">1x</span>
+						</MenuPanel>
+						<MenuPanel title="Kualitas" items={qualities}>
+							<div slot="trigger-button">
+								<Settings class="w-5 h-5 md:w-6 md:h-6" />
+							</div>
+						</MenuPanel>
+						<button type="button" on:click={toggleFullscreen}>
+							{#if $isFullscreen}
+								<Minimize class="w-5 h-5 md:w-6 md:h-6" />
+							{:else}
+								<Fullscreen class="w-5 h-5 md:w-6 md:h-6" />
+							{/if}
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -186,61 +291,201 @@
 </div>
 
 <style lang="scss">
-	$trackHeight: 0.25rem;
-	$accentColor: lime;
-	$primaryColor: green;
+	:root {
+		--primaryColor: #ffffff;
+	}
 
 	input[type='range'] {
-		appearance: none;
-		background: transparent;
-		cursor: pointer;
+		color: var(--primaryColor);
+		--thumb-height: 0.8em;
+		--track-height: 0.15em;
+		--track-color: hsla(0, 0%, 80%, 0.5);
+		--brightness-hover: 180%;
+		--brightness-down: 80%;
+		--clip-edges: 0.125em;
 
-		&:focus {
-			outline: none;
+		position: relative;
+		background: #fff0;
+		overflow: hidden;
 
+		&:is(#duration) {
+			width: 100%;
+			cursor: pointer;
+		}
+
+		&:active {
+			cursor: pointer;
+		}
+
+		&:disabled {
+			filter: grayscale(1);
+			opacity: 0.3;
+			cursor: not-allowed;
+		}
+
+		&,
+		&::-webkit-slider-runnable-track,
+		&::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			height: var(--thumb-height);
+			position: relative;
+		}
+
+		&:is(#duration):hover {
+			--clip-edges: 0.125em;
 			&::-webkit-slider-thumb {
-				border: 1px solid $accentColor;
-				outline: 2px solid $accentColor;
-				outline-offset: 0.125rem;
+				--box-fill: calc(-100vmax - var(--thumb-width, var(--thumb-height))) 0 0 100vmax
+					currentColor;
+				--clip-further: calc(100% + 1px);
+				width: var(--thumb-width, var(--thumb-height));
+				clip-path: polygon(
+					100% -1px,
+					var(--clip-edges) -1px,
+					0 var(--clip-top),
+					-100vmax var(--clip-top),
+					-100vmax var(--clip-bottom),
+					0 var(--clip-bottom),
+					var(--clip-edges) 100%,
+					var(--clip-further) var(--clip-further)
+				);
 			}
 
 			&::-moz-range-thumb {
-				border: 1px solid $accentColor;
-				outline: 2px solid $accentColor;
-				outline-offset: 0.125rem;
+				width: var(--thumb-width, var(--thumb-height));
 			}
 		}
 
-		&::-webkit-slider-runnable-track {
-			background: white;
-			height: $trackHeight;
-			border-radius: 5rem;
-		}
+		&:is(#duration) {
+			--clip-edges: 0;
+			&::-webkit-slider-thumb {
+				--box-fill: calc(-100vmax - var(--thumb-width, var(--thumb-height))) 0 0 105vmax
+					currentColor;
+				--clip-further: 0;
 
-		&::-moz-range-track {
-			background: white;
-			height: $trackHeight;
-			border-radius: 5rem;
+				width: 0;
+				clip-path: polygon(
+					0% 0px,
+					var(--clip-edges) 0px,
+					0 var(--clip-top),
+					-100vmax var(--clip-top),
+					-100vmax var(--clip-bottom),
+					0 var(--clip-bottom),
+					var(--clip-edges) 0%,
+					var(--clip-further) var(--clip-further)
+				);
+			}
+
+			&::-moz-range-thumb {
+				width: 0;
+			}
 		}
 
 		&::-webkit-slider-thumb {
+			--thumb-radius: calc((var(--thumb-height) * 0.5) - 1px);
+			--clip-top: calc((var(--thumb-height) - var(--track-height)) * 0.5 - 0.5px);
+			--clip-bottom: calc(var(--thumb-height) - var(--clip-top));
+			--clip-further: calc(100% + 1px);
+			--box-fill: calc(-100vmax - var(--thumb-width, var(--thumb-height))) 0 0 100.028vmax
+				currentColor;
+
+			width: var(--thumb-width, var(--thumb-height));
+			background: linear-gradient(currentColor 0 0) scroll no-repeat left center / 50%
+				calc(var(--track-height) + 1px);
+			background-color: currentColor;
+			box-shadow: var(--box-fill);
+			border-radius: var(--thumb-width, var(--thumb-height));
+
+			filter: brightness(100%);
+			clip-path: polygon(
+				100% -1px,
+				var(--clip-edges) -1px,
+				0 var(--clip-top),
+				-100vmax var(--clip-top),
+				-100vmax var(--clip-bottom),
+				0 var(--clip-bottom),
+				var(--clip-edges) 100%,
+				var(--clip-further) var(--clip-further)
+			);
+		}
+
+		&:hover::-webkit-slider-thumb {
+			filter: brightness(var(--brightness-hover));
+			cursor: pointer;
+		}
+
+		&:active::-webkit-slider-thumb {
+			filter: brightness(var(--brightness-down));
+			cursor: pointer;
+		}
+
+		&::-webkit-slider-runnable-track {
+			background: linear-gradient(var(--track-color) 0 0) scroll no-repeat center / 100%
+				calc(var(--track-height) + 1px);
+		}
+
+		&:disabled::-webkit-slider-thumb {
+			cursor: not-allowed;
+		}
+
+		&,
+		&::-moz-range-track,
+		&::-moz-range-thumb {
 			appearance: none;
-			margin-top: -12px;
-			background-color: $primaryColor;
-			width: 0.85rem;
-			height: 0.85rem;
-			border-radius: 50%;
-			border: none;
+			height: var(--thumb-height);
+		}
+
+		&::-moz-range-track,
+		&::-moz-range-thumb,
+		&::-moz-range-progress {
+			background: #fff0;
 		}
 
 		&::-moz-range-thumb {
+			background: currentColor;
+			border: 0;
+			width: var(--thumb-width, var(--thumb-height));
+			border-radius: var(--thumb-width, var(--thumb-height));
+			cursor: pointer;
+		}
+
+		&:active::-moz-range-thumb {
+			cursor: pointer;
+		}
+
+		&::-moz-range-track {
+			width: 100%;
+			background: var(--track-color);
+		}
+
+		&::-moz-range-progress {
 			appearance: none;
-			margin-top: -12px;
-			background-color: $primaryColor;
-			width: 0.85rem;
-			height: 0.85rem;
-			border-radius: 50%;
-			border: none;
+			background: currentColor;
+			transition-delay: 30ms;
+		}
+
+		&::-moz-range-track,
+		&::-moz-range-progress {
+			height: calc(var(--track-height) + 1px);
+			border-radius: var(--track-height);
+		}
+
+		&::-moz-range-thumb,
+		&::-moz-range-progress {
+			filter: brightness(100%);
+		}
+
+		&:hover::-moz-range-thumb,
+		&:hover::-moz-range-progress {
+			filter: brightness(var(--brightness-hover));
+		}
+
+		&:active::-moz-range-thumb,
+		&:active::-moz-range-progress {
+			filter: brightness(var(--brightness-down));
+		}
+
+		&:disabled::-moz-range-thumb {
+			cursor: not-allowed;
 		}
 	}
 </style>
