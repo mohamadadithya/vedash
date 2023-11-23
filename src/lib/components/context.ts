@@ -10,7 +10,8 @@ const setStates = () => {
 		isFullscreen: Writable<boolean> = writable(false),
 		isSeeking: Writable<boolean> = writable(false),
 		playbackRate: Writable<number> = writable(1),
-		isMuted: Writable<boolean> = writable(false);
+		isMuted: Writable<boolean> = writable(false),
+		isLoopMode: Writable<boolean> = writable(false);
 
 	setContext('currentTime', currentTime);
 	setContext('volume', volume);
@@ -21,6 +22,7 @@ const setStates = () => {
 	setContext('isSeeking', isSeeking);
 	setContext('playbackRate', playbackRate);
 	setContext('isMuted', isMuted);
+	setContext('isLoopMode', isLoopMode);
 };
 
 const getStates = () => {
@@ -33,7 +35,8 @@ const getStates = () => {
 		isFullscreen: getContext<Writable<boolean>>('isFullscreen'),
 		isSeeking: getContext<Writable<boolean>>('isSeeking'),
 		playbackRate: getContext<Writable<number>>('playbackRate'),
-		isMuted: getContext<Writable<boolean>>('isMuted')
+		isMuted: getContext<Writable<boolean>>('isMuted'),
+		isLoopMode: getContext<Writable<boolean>>('isLoopMode')
 	};
 };
 

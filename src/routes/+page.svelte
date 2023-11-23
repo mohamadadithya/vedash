@@ -3,5 +3,10 @@
 </script>
 
 <div class="min-h-screen grid place-items-center w-full max-w-4xl mx-auto">
-	<Player />
+	<Player
+		--primaryColor="#FFFFFF"
+		src="/videos/example.mp4"
+		disablepictureinpicture={true}
+		crossorigin="anonymous"
+	/>
 </div>

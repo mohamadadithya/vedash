@@ -1,10 +1,12 @@
 <script lang="ts">
 	import {
+		CheckCircle2,
 		FastForward,
 		Fullscreen,
 		Minimize,
 		Pause,
 		Play,
+		Repeat2,
 		Settings,
 		Volume1,
 		Volume2,
@@ -25,8 +27,15 @@
 		isFullscreen,
 		isSeeking,
 		playbackRate,
-		isMuted
+		isMuted,
+		isLoopMode
 	} = getStates();
+
+	export let src: string,
+		preload = 'auto',
+		disablepictureinpicture = false,
+		controlslist = '',
+		crossorigin: 'anonymous' | 'use-credentials' | '' = '';
 
 	let playerEl: HTMLDivElement;
 
@@ -108,6 +117,21 @@
 		$playbackRate = +speed!;
 	};
 
+	const handleSkipFrames = (activeEl: HTMLElement, status: 'forward' | 'backward') => {
+		if (activeEl.id !== 'volume') {
+			switch (status) {
+				case 'forward':
+					$currentTime += 10;
+					break;
+				case 'backward':
+					$currentTime -= 10;
+					break;
+			}
+
+			videoEl.currentTime = $currentTime;
+		}
+	};
+
 	const setShortcuts = (event: KeyboardEvent) => {
 		const activeElement = document.activeElement as HTMLElement;
 
@@ -122,12 +146,10 @@
 				toggleFullscreen();
 				break;
 			case 'ArrowRight':
-				if (activeElement.id !== 'volume') $currentTime += 10;
-				videoEl.currentTime = $currentTime;
+				handleSkipFrames(activeElement, 'forward');
 				break;
 			case 'ArrowLeft':
-				if (activeElement.id !== 'volume') $currentTime -= 10;
-				videoEl.currentTime = $currentTime;
+				handleSkipFrames(activeElement, 'backward');
 				break;
 		}
 	};
@@ -173,25 +195,33 @@
 				const controlsEl = targetEl.closest('.vedash__controls');
 				const videoEl = targetEl.closest('.vedash__video');
 
-				if (!controlsEl && !videoEl && !$isPaused) {
-					$isShowControls = false;
-				}
+				if (!controlsEl && !videoEl && !$isPaused) $isShowControls = false;
 			});
 		}
+	};
+
+	const toggleLoop = () => {
+		videoEl.loop = !videoEl.loop;
+		$isLoopMode = videoEl.loop;
 	};
 </script>
 
 <svelte:window on:keydown={setShortcuts} />
 
-<div bind:this={playerEl} class="relative text-white" on:fullscreenchange={updateFullscreenState}>
+<div
+	bind:this={playerEl}
+	class="relative vedash"
+	on:fullscreenchange={updateFullscreenState}
+	on:contextmenu|preventDefault|stopPropagation
+	role="presentation"
+>
 	<video
-		bind:this={videoEl}
-		preload="auto"
-		disablepictureinpicture={true}
+		{preload}
+		{disablepictureinpicture}
+		{controlslist}
+		{crossorigin}
 		class="w-full h-full vedash__video"
-		src="/videos/example.mp4"
-		controlslist="nodownload"
-		crossorigin="anonymous"
+		bind:this={videoEl}
 		on:timeupdate={setCurrentTime}
 		on:click={togglePlay}
 		bind:duration={$totalDuration}
@@ -200,7 +230,9 @@
 		bind:muted={$isMuted}
 		on:mouseenter={handleMouseEnter}
 		on:mouseleave={handleMouseLeave}
+		on:ended
 	>
+		<source {src} />
 		<track kind="captions" />
 	</video>
 	{#if $isSeeking}
@@ -211,18 +243,18 @@
 			<div
 				class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4"
 			>
-				<button type="button" aria-label="Backward"
-					><FastForward class="-scale-x-[1] w-7 h-7 md:w-10 md:h-10" /></button
+				<button type="button" aria-label="Backward" title="Previous"
+					><FastForward class="-scale-x-[1] w-8 h-8 md:w-12 md:h-12" /></button
 				>
 				<button on:click={togglePlay} type="button" aria-label="Play/Pause">
 					{#if $isPaused}
-						<Play class="w-7 h-7 md:w-10 md:h-10" />
+						<Play class="w-8 h-8 md:w-12 md:h-12" />
 					{:else}
-						<Pause class="w-7 h-7 md:w-10 md:h-10" />
+						<Pause class="w-8 h-8 md:w-12 md:h-12" />
 					{/if}
 				</button>
-				<button type="button" aria-label="Forward"
-					><FastForward class="w-7 h-7 md:w-10 md:h-10" /></button
+				<button type="button" aria-label="Forward" title="Next"
+					><FastForward class="w-8 h-8 md:w-12 md:h-12" /></button
 				>
 			</div>
 			<div class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent">
@@ -245,7 +277,7 @@
 				/>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-2.5">
-						<button type="button" on:click={toggleMute}>
+						<button type="button" on:click={toggleMute} title="Mute">
 							{#if $isMuted || $volume === 0}
 								<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
 							{:else if $volume > 0.5}
@@ -268,15 +300,39 @@
 						/>
 					</div>
 					<div class="flex items-center gap-5">
-						<MenuPanel title="Kecepatan" items={playbackSpeeds} on:change={setPlaybackSpeed}>
-							<span slot="trigger-button" class="font-semibold text-lg md:text-xl">1x</span>
+						<button
+							type="button"
+							on:click={toggleLoop}
+							aria-label="Loop"
+							class="relative"
+							title="Loop"
+						>
+							{#if $isLoopMode}
+								<CheckCircle2
+									class="w-3 h-3 md:w-4 md:h-4 fill-white stroke-black absolute -top-1 right-0"
+								/>
+							{/if}
+							<Repeat2 class="w-5 h-5 md:w-6 md:h-6" />
+						</button>
+						<MenuPanel
+							prefix="x"
+							title="Playback Rate"
+							items={playbackSpeeds}
+							on:change={setPlaybackSpeed}
+						>
+							<span slot="trigger-button" class="font-semibold text-base md:text-lg">1x</span>
 						</MenuPanel>
-						<MenuPanel title="Kualitas" items={qualities}>
+						<MenuPanel prefix="p" title="Quality" items={qualities}>
 							<div slot="trigger-button">
 								<Settings class="w-5 h-5 md:w-6 md:h-6" />
 							</div>
 						</MenuPanel>
-						<button type="button" on:click={toggleFullscreen}>
+						<button
+							title="Fullscreen"
+							type="button"
+							on:click={toggleFullscreen}
+							aria-label="Fullscreen"
+						>
 							{#if $isFullscreen}
 								<Minimize class="w-5 h-5 md:w-6 md:h-6" />
 							{:else}
@@ -291,8 +347,8 @@
 </div>
 
 <style lang="scss">
-	:root {
-		--primaryColor: #ffffff;
+	.vedash {
+		color: var(--primaryColor);
 	}
 
 	input[type='range'] {
