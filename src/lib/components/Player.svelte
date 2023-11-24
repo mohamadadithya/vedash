@@ -16,7 +16,8 @@
 	import { setStates, getStates } from './context.js';
 	import MenuPanel from './MenuPanel.svelte';
 	import { fade } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
+	import shaka from 'shaka-player';
 
 	setStates();
 	const {
@@ -29,7 +30,8 @@
 		isSeeking,
 		playbackRate,
 		isMuted,
-		isLoopMode
+		isLoopMode,
+		isLoaded
 	} = getStates();
 
 	const dispatch = createEventDispatcher();
@@ -208,6 +210,30 @@
 		$isPaused = true;
 		dispatch('ended');
 	};
+
+	onMount(async () => {
+		const initPlayer = async () => {
+			shaka.polyfill.installAll();
+
+			if (!shaka.Player.isBrowserSupported) {
+				console.error('Browser is not supported!');
+				return;
+			}
+
+			const player = new shaka.Player(videoEl);
+			player.addEventListener('error', console.error);
+
+			try {
+				await player.load(src);
+				console.log('Player has loaded the video');
+			} catch (error) {
+				console.log(error);
+			}
+		};
+
+		await initPlayer();
+		$isLoaded = true;
+	});
 </script>
 
 <svelte:window on:keydown={setShortcuts} on:mousemove={handleIdle} />
@@ -236,16 +262,15 @@
 		on:mouseleave={handleMouseLeave}
 		on:ended={handleEnded}
 	>
-		<source {src} />
 		<track kind="captions" />
 	</video>
-	{#if $isSeeking || $isShowControls}
+	{#if $isSeeking || ($isShowControls && $isLoaded)}
 		<div
 			transition:fade={{ duration: 200 }}
 			class="absolute w-full h-full bg-black top-0 left-0 bg-opacity-40 pointer-events-none"
 		/>
 	{/if}
-	{#if $isShowControls}
+	{#if $isShowControls && $isLoaded}
 		<div transition:fade={{ duration: 200 }} class="vedash__controls">
 			<div
 				class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4"
