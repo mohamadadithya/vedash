@@ -16,6 +16,7 @@
 	import { setStates, getStates } from './context.js';
 	import MenuPanel from './MenuPanel.svelte';
 	import { fade } from 'svelte/transition';
+	import { createEventDispatcher } from 'svelte';
 
 	setStates();
 	const {
@@ -30,6 +31,8 @@
 		isMuted,
 		isLoopMode
 	} = getStates();
+
+	const dispatch = createEventDispatcher();
 
 	export let src: string,
 		preload = 'auto',
@@ -159,32 +162,28 @@
 		$currentTime = videoEl.currentTime;
 	};
 
-	const handleMouseEnter = () => {
-		$isShowControls = true;
+	let idleTimer: ReturnType<typeof setTimeout>,
+		idleState = false,
+		time = 3000;
 
-		let idleTimer: ReturnType<typeof setTimeout>,
-			idleState = false,
-			time = 3000;
+	const handleIdle = (event: Event) => {
+		const targetEl = event.target as HTMLElement;
+		const controlsEl = targetEl.closest('.vedash__controls');
 
-		const handleIdle = (event: Event) => {
-			const targetEl = event.target as HTMLElement;
-			const controlsEl = targetEl.closest('.vedash__controls');
+		clearTimeout(idleTimer);
 
-			clearTimeout(idleTimer);
+		if (idleState) $isShowControls = true;
 
-			if (idleState) $isShowControls = true;
-
-			idleState = false;
-			idleTimer = setTimeout(() => {
-				if (!controlsEl && !$isPaused) {
-					$isShowControls = false;
-					idleState = true;
-				}
-			}, time);
-		};
-
-		document.addEventListener('mousemove', handleIdle);
+		idleState = false;
+		idleTimer = setTimeout(() => {
+			if (!controlsEl && !$isPaused) {
+				$isShowControls = false;
+				idleState = true;
+			}
+		}, time);
 	};
+
+	const handleMouseEnter = () => ($isShowControls = true);
 
 	const handleMouseLeave = () => {
 		if ($isPaused) {
@@ -204,9 +203,14 @@
 		videoEl.loop = !videoEl.loop;
 		$isLoopMode = videoEl.loop;
 	};
+
+	const handleEnded = () => {
+		$isPaused = true;
+		dispatch('ended');
+	};
 </script>
 
-<svelte:window on:keydown={setShortcuts} />
+<svelte:window on:keydown={setShortcuts} on:mousemove={handleIdle} />
 
 <div
 	bind:this={playerEl}
@@ -230,13 +234,16 @@
 		bind:muted={$isMuted}
 		on:mouseenter={handleMouseEnter}
 		on:mouseleave={handleMouseLeave}
-		on:ended
+		on:ended={handleEnded}
 	>
 		<source {src} />
 		<track kind="captions" />
 	</video>
-	{#if $isSeeking}
-		<div class="absolute w-full h-full bg-black top-0 left-0 bg-opacity-50" />
+	{#if $isSeeking || $isShowControls}
+		<div
+			transition:fade={{ duration: 200 }}
+			class="absolute w-full h-full bg-black top-0 left-0 bg-opacity-40 pointer-events-none"
+		/>
 	{/if}
 	{#if $isShowControls}
 		<div transition:fade={{ duration: 200 }} class="vedash__controls">
@@ -246,7 +253,12 @@
 				<button type="button" aria-label="Backward" title="Previous"
 					><FastForward class="-scale-x-[1] w-8 h-8 md:w-12 md:h-12" /></button
 				>
-				<button on:click={togglePlay} type="button" aria-label="Play/Pause">
+				<button
+					on:click={togglePlay}
+					type="button"
+					aria-label="Play/Pause"
+					title={$isPaused ? 'Play' : 'Pause'}
+				>
 					{#if $isPaused}
 						<Play class="w-8 h-8 md:w-12 md:h-12" />
 					{:else}
