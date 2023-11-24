@@ -4,19 +4,30 @@
 	import { createFloatingActions } from 'svelte-floating-ui';
 	import { createEventDispatcher } from 'svelte';
 
-	export let items: number[],
+	interface ItemObject {
+		label: string;
+		value: unknown;
+	}
+
+	export let items: ItemObject[],
 		title: string,
-		prefix = '';
+		value = '';
 
 	let isShow = false;
+
+	$: selectedLabel = value;
+
+	const dispatch = createEventDispatcher();
+	const changeEvent = (item: ItemObject) => {
+		value = item.label;
+		dispatch('change', { data: item.value });
+	};
 
 	const [floatingRef, floatingContent] = createFloatingActions({
 		strategy: 'absolute',
 		placement: 'top',
 		middleware: [offset(6), flip(), shift()]
 	});
-
-	const dispatch = createEventDispatcher();
 </script>
 
 <div class="flex flex-col justify-center" use:clickoutside on:clickoutside={() => (isShow = false)}>
@@ -35,13 +46,15 @@
 			use:floatingContent
 		>
 			<p class="text-sm text-center bg-gray-200 py-1.5 px-2.5 border-b border-gray-300">{title}</p>
-			<ul>
+			<ul class="max-h-32 overflow-y-auto">
 				{#each items as item}
 					<li>
 						<button
-							on:click={() => dispatch('change', { data: item })}
+							on:click={() => changeEvent(item)}
 							type="button"
-							class="w-full hover:bg-gray-200 px-5 py-2 text-sm">{item}{prefix}</button
+							class="w-full {item.label.includes(selectedLabel)
+								? 'bg-gray-300'
+								: ''} hover:bg-gray-200 px-5 py-2 text-sm">{item.label}</button
 						>
 					</li>
 				{/each}

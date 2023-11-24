@@ -12,7 +12,10 @@ const setStates = () => {
 		playbackRate: Writable<number> = writable(1),
 		isMuted: Writable<boolean> = writable(false),
 		isLoopMode: Writable<boolean> = writable(false),
-		isLoaded: Writable<boolean> = writable(false);
+		isLoaded: Writable<boolean> = writable(false),
+		quality: Writable<string> = writable('Auto'),
+		isOnline: Writable<boolean> = writable(true),
+		isBuffering: Writable<boolean> = writable(false);
 
 	setContext('currentTime', currentTime);
 	setContext('volume', volume);
@@ -25,6 +28,9 @@ const setStates = () => {
 	setContext('isMuted', isMuted);
 	setContext('isLoopMode', isLoopMode);
 	setContext('isLoaded', isLoaded);
+	setContext('quality', quality);
+	setContext('isOnline', isOnline);
+	setContext('isBuffering', isBuffering);
 };
 
 const getStates = () => {
@@ -39,7 +45,10 @@ const getStates = () => {
 		playbackRate: getContext<Writable<number>>('playbackRate'),
 		isMuted: getContext<Writable<boolean>>('isMuted'),
 		isLoopMode: getContext<Writable<boolean>>('isLoopMode'),
-		isLoaded: getContext<Writable<boolean>>('isLoaded')
+		isLoaded: getContext<Writable<boolean>>('isLoaded'),
+		quality: getContext<Writable<string>>('quality'),
+		isOnline: getContext<Writable<boolean>>('isOnline'),
+		isBuffering: getContext<Writable<boolean>>('isBuffering')
 	};
 };
 
