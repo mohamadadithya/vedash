@@ -293,6 +293,17 @@
 			}
 		};
 
+		if ('serviceWorker' in navigator) {
+			try {
+				await navigator.serviceWorker.register('/src/lib/service-worker.ts');
+				console.log('Service Worker registered successfully');
+			} catch (error) {
+				console.error(`Error registering service worker`);
+			}
+		} else {
+			console.error(`Browser doesn't support service workers`);
+		}
+
 		initShaka();
 		await initPlayer();
 		$isLoaded = true;
@@ -377,7 +388,7 @@
 		</div>
 	{/if}
 	{#if $isShowControls && $isLoaded}
-		<div transition:fade={{ duration: 200 }} class="vedash__controls">
+		<div class="vedash__controls">
 			{#if !$isBuffering}
 				<div
 					class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4"
