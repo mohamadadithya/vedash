@@ -26,6 +26,7 @@
 	type="range"
 	class="w-full rounded-xl relative {className}"
 	aria-label={label}
+	tabindex={0}
 	bind:value
 	on:change
 	on:input
@@ -37,36 +38,30 @@
 />
 
 <style lang="scss">
+	@mixin range-thumb {
+		appearance: none;
+		height: 12px;
+		width: 12px;
+		background-color: var(--primaryColor);
+		border-radius: 50%;
+		border: none;
+		transition: 0.2s ease-in-out;
+	}
+
 	input[type='range'] {
-		-webkit-appearance: none;
 		appearance: none;
 		width: 100%;
 		cursor: pointer;
-		outline: none;
 		border-radius: 12px;
 		height: 3px;
 		background: hsla(0, 0%, 80%, 0.4);
 
-		/* Thumb: webkit */
 		&::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			appearance: none;
-			height: 12px;
-			width: 12px;
-			background-color: var(--primaryColor);
-			border-radius: 50%;
-			border: none;
-			transition: 0.2s ease-in-out;
+			@include range-thumb();
 		}
 
-		/* Thumb: Firefox */
 		&::-moz-range-thumb {
-			height: 12px;
-			width: 12px;
-			background-color: var(--primaryColor);
-			border-radius: 50%;
-			border: none;
-			transition: 0.2s ease-in-out;
+			@include range-thumb();
 		}
 	}
 </style>

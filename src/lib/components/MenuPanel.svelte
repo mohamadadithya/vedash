@@ -3,11 +3,7 @@
 	import { offset, flip, shift } from 'svelte-floating-ui/dom';
 	import { createFloatingActions } from 'svelte-floating-ui';
 	import { createEventDispatcher } from 'svelte';
-
-	interface ItemObject {
-		label: string;
-		value: unknown;
-	}
+	import type { ItemObject } from '$lib/types.js';
 
 	export let items: ItemObject[],
 		title: string,

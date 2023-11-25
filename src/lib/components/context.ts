@@ -18,7 +18,7 @@ const setStates = () => {
 		isMuted: Writable<boolean> = writable(false),
 		isLoopMode: Writable<boolean> = writable(false),
 		isLoaded: Writable<boolean> = writable(false),
-		quality: Writable<string> = writable('Auto'),
+		quality: Writable<number | null> = writable(null),
 		isOnline: Writable<boolean> = writable(true),
 		isBuffering: Writable<boolean> = writable(false),
 		bufferedWidth: Tweened<number> = tweened(0);

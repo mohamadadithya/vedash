@@ -11,15 +11,19 @@
 		Settings,
 		Volume1,
 		Volume2,
-		VolumeX
+		VolumeX,
+		X
 	} from 'lucide-svelte';
 	import { formatDuration } from '$lib/utils.js';
 	import { setStates, getStates } from './context.js';
 	import MenuPanel from './MenuPanel.svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { beforeUpdate, createEventDispatcher, onDestroy, onMount } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import shaka, { Player } from 'shaka-player';
 	import Slider from './Slider.svelte';
+	import MediaQuery from 'svelte-media-queries';
+	import Select from './Select.svelte';
+	import type { ItemObject } from '$lib/types.js';
 
 	setStates();
 	const {
@@ -123,7 +127,7 @@
 		$isSeeking = false;
 	};
 
-	const playbackSpeeds = [0.5, 1, 1.5, 2].map((rate) => {
+	const playbackRates = [0.5, 1, 1.5, 2].map((rate) => {
 		return {
 			label: `${rate}x`,
 			value: rate
@@ -199,8 +203,12 @@
 		}, time);
 	};
 
-	const handleMouseEnter = () => ($isShowControls = true);
+	const handleMouseMove = (event: Event) => {
+		const query = window.matchMedia('(min-width: 540px)');
+		if (query.matches) handleIdle(event);
+	};
 
+	const handleMouseEnter = () => ($isShowControls = true);
 	const handleMouseLeave = () => {
 		if ($isPaused) {
 			$isShowControls = true;
@@ -236,14 +244,9 @@
 	const addNetworkListeners = () => updateOnlineStatus();
 	const trackVariants: shaka.extern.Track[] = [];
 
-	interface QualityObject {
-		label: string;
-		value: shaka.extern.Track | null;
-	}
-
 	let player: Player,
 		selectedPlaybackRate = `${$playbackRate}x`,
-		qualities: QualityObject[] = [];
+		qualities: ItemObject[] = [];
 
 	onMount(async () => {
 		$isOnline = window.navigator.onLine;
@@ -274,7 +277,7 @@
 					qualities = trackVariants.map((track) => {
 						return {
 							label: `${track.height}p`,
-							value: track
+							value: track.id
 						};
 					});
 
@@ -317,15 +320,20 @@
 	});
 
 	const handleQuality = (event: CustomEvent) => {
-		const selectedVariant = event.detail.data as shaka.extern.Track;
+		const selectedVariantId = !event.detail.data ? null : +event.detail.data;
+		const selectedVariant = trackVariants.find(
+			(track) => track.id === selectedVariantId
+		) as shaka.extern.Track;
 
 		if (selectedVariant) {
 			const variant = trackVariants.find((track) => track.id === selectedVariant.id);
-			const selectedQuality = qualities.find((quality) => quality.label === `${variant?.height}p`);
-
-			if (selectedQuality) $quality = selectedQuality?.label as string;
 
 			if (variant) {
+				const selectedQuality = qualities.find(
+					(quality) => quality.label === `${variant?.height}p`
+				);
+				if (selectedQuality) $quality = selectedQuality.label as string;
+
 				player.configure({ abr: { enabled: false } });
 				player.selectVariantTrack(variant, true);
 			} else {
@@ -336,11 +344,23 @@
 			player.configure({ abr: { enabled: true } });
 		}
 	};
+
+	let isOpenPlaybackSettings = false;
+
+	const handleVideoClicked = (event: Event) => {
+		const query = window.matchMedia('(min-width: 540px)');
+		if (query.matches) {
+			togglePlay();
+		} else {
+			$isShowControls = !$isShowControls;
+			handleIdle(event);
+		}
+	};
 </script>
 
 <svelte:window
 	on:keydown={setShortcuts}
-	on:mousemove={handleIdle}
+	on:mousemove={handleMouseMove}
 	on:online={updateOnlineStatus}
 	on:offline={updateOnlineStatus}
 />
@@ -368,7 +388,7 @@
 		class="w-full h-full vedash__video"
 		bind:this={videoEl}
 		on:timeupdate={setCurrentTime}
-		on:click={togglePlay}
+		on:click={handleVideoClicked}
 		bind:duration={$totalDuration}
 		bind:playbackRate={$playbackRate}
 		bind:volume={$volume}
@@ -391,10 +411,62 @@
 		</div>
 	{/if}
 	{#if $isShowControls && $isLoaded}
-		<div class="vedash__controls">
+		<div class="vedash__controls text-white">
+			<MediaQuery query="(max-width: 540px)" let:matches>
+				{#if matches}
+					<button
+						on:click={() => (isOpenPlaybackSettings = true)}
+						type="button"
+						class="absolute top-5 right-5"
+					>
+						<Settings class="w-5 h-5 md:w-6 md:h-6" />
+					</button>
+					{#if isOpenPlaybackSettings}
+						<div
+							transition:fade={{ duration: 200 }}
+							role="dialog"
+							aria-labelledby="Playback settings"
+							aria-describedby="Custom dialog element for playback settings"
+							aria-modal={isOpenPlaybackSettings}
+							class="w-full h-full fixed top-0 left-0 bg-black bg-opacity-40 z-[1] grid place-items-center text-black"
+						>
+							<div class="bg-white p-5 w-full max-w-xs rounded-xl shadow-xl relative">
+								<p class="text-sm uppercase font-semibold mb-4">Playback Settings</p>
+								<div class="grid gap-4">
+									{#if trackVariants.length > 0}
+										<Select
+											on:change={handleQuality}
+											label="Quality"
+											id="quality"
+											name="quality"
+											items={qualities}
+											bind:value={$quality}
+										/>
+									{/if}
+									<Select
+										on:change={setPlaybackSpeed}
+										label="Speed"
+										id="speed"
+										name="speed"
+										items={playbackRates}
+										bind:value={$playbackRate}
+									/>
+									<button
+										on:click={() => (isOpenPlaybackSettings = false)}
+										type="button"
+										class="absolute top-5 right-5"
+									>
+										<X />
+									</button>
+								</div>
+							</div>
+						</div>
+					{/if}
+				{/if}
+			</MediaQuery>
 			{#if !$isBuffering}
 				<div
-					class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 text-white"
+					class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4"
 				>
 					<button
 						on:click={() => dispatch('prev')}
@@ -419,11 +491,34 @@
 					>
 				</div>
 			{/if}
-			<div class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent">
-				<div class="relative mb-2">
+			<div
+				class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent text-white"
+			>
+				<MediaQuery query="(max-width: 540px)" let:matches>
+					{#if matches}
+						<div class="flex items-center justify-between">
+							<p class="text-sm">
+								{formatDuration($currentTime)} / {formatDuration($totalDuration)}
+							</p>
+							<button
+								title="Fullscreen"
+								type="button"
+								on:click={toggleFullscreen}
+								aria-label="Fullscreen"
+							>
+								{#if $isFullscreen}
+									<Minimize class="w-5 h-5 md:w-6 md:h-6" />
+								{:else}
+									<Fullscreen class="w-5 h-5 md:w-6 md:h-6" />
+								{/if}
+							</button>
+						</div>
+					{/if}
+				</MediaQuery>
+				<div class="relative">
 					<div
 						style="width: {$bufferedWidth}%;"
-						class="vedash__buffered bg-gray-400 h-[3px] absolute left-0 top-[62%] pointer-events-none rounded-[12px]"
+						class="vedash__buffered bg-gray-400 h-[3px] absolute left-0 top-[60%] pointer-events-none rounded-[12px]"
 					/>
 					<Slider
 						on:input={updateCurrentTime}
@@ -438,89 +533,89 @@
 						bind:value={$currentTime}
 					/>
 				</div>
-				<div class="flex items-center justify-between text-white">
-					<div class="flex items-center gap-3">
-						<div class="flex items-center gap-2.5 group">
-							<button type="button" on:click={toggleMute} title="Mute">
-								{#if $isMuted || $volume === 0}
-									<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
-								{:else if $volume > 0.5}
-									<Volume2 class="w-5 h-5 md:w-6 md:h-6" />
-								{:else if $volume <= 0.5}
-									<Volume1 class="w-5 h-5 md:w-6 md:h-6" />
-								{/if}
-							</button>
-							<Slider
-								--primaryColor="#FFFFFF"
-								on:input={updateVolume}
-								class="max-w-[5rem] rounded-xl bg-white"
-								label="Volume slider"
-								name="volume"
-								id="volume"
-								step={0.1}
-								min={0}
-								max={1}
-								bind:value={$volume}
-							/>
-						</div>
-						<p class="text-sm">{formatDuration($currentTime)} / {formatDuration($totalDuration)}</p>
-					</div>
-					<div class="flex items-center gap-5">
-						<button
-							type="button"
-							on:click={toggleLoop}
-							aria-label="Loop"
-							class="relative"
-							title="Loop"
-						>
-							{#if $isLoopMode}
-								<CheckCircle2
-									class="w-3 h-3 md:w-4 md:h-4 fill-white stroke-black absolute -top-1 right-0"
-								/>
-							{/if}
-							<Repeat2 class="w-5 h-5 md:w-6 md:h-6" />
-						</button>
-						<MenuPanel
-							bind:value={selectedPlaybackRate}
-							title="Playback Rate"
-							items={playbackSpeeds}
-							on:change={setPlaybackSpeed}
-						>
-							<span slot="trigger-button" class="font-semibold text-base md:text-lg">1x</span>
-						</MenuPanel>
-						{#if trackVariants.length > 0}
-							<MenuPanel
-								bind:value={$quality}
-								on:change={handleQuality}
-								title="Quality"
-								items={qualities}
-							>
-								<div slot="trigger-button">
-									<Settings class="w-5 h-5 md:w-6 md:h-6" />
+				<MediaQuery query="(min-width: 540px)" let:matches>
+					{#if matches}
+						<div class="flex items-center justify-between text-white mt-2">
+							<div class="flex items-center gap-3">
+								<div class="flex items-center gap-2.5">
+									<button type="button" on:click={toggleMute} title="Mute">
+										{#if $isMuted || $volume === 0}
+											<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
+										{:else if $volume > 0.5}
+											<Volume2 class="w-5 h-5 md:w-6 md:h-6" />
+										{:else if $volume <= 0.5}
+											<Volume1 class="w-5 h-5 md:w-6 md:h-6" />
+										{/if}
+									</button>
+									<Slider
+										--primaryColor="#FFFFFF"
+										on:input={updateVolume}
+										class="max-w-[5rem] rounded-xl bg-white"
+										label="Volume slider"
+										name="volume"
+										id="volume"
+										step={0.1}
+										min={0}
+										max={1}
+										bind:value={$volume}
+									/>
 								</div>
-							</MenuPanel>
-						{/if}
-						<button
-							title="Fullscreen"
-							type="button"
-							on:click={toggleFullscreen}
-							aria-label="Fullscreen"
-						>
-							{#if $isFullscreen}
-								<Minimize class="w-5 h-5 md:w-6 md:h-6" />
-							{:else}
-								<Fullscreen class="w-5 h-5 md:w-6 md:h-6" />
-							{/if}
-						</button>
-					</div>
-				</div>
+								<p class="text-sm">
+									{formatDuration($currentTime)} / {formatDuration($totalDuration)}
+								</p>
+							</div>
+							<div class="flex items-center gap-5">
+								<button
+									type="button"
+									on:click={toggleLoop}
+									aria-label="Loop"
+									class="relative"
+									title="Loop"
+								>
+									{#if $isLoopMode}
+										<CheckCircle2
+											class="w-3 h-3 md:w-4 md:h-4 fill-white stroke-black absolute -top-1 right-0"
+										/>
+									{/if}
+									<Repeat2 class="w-5 h-5 md:w-6 md:h-6" />
+								</button>
+								<MenuPanel
+									bind:value={selectedPlaybackRate}
+									title="Speed"
+									items={playbackRates}
+									on:change={setPlaybackSpeed}
+								>
+									<span slot="trigger-button" class="font-semibold text-base md:text-lg">1x</span>
+								</MenuPanel>
+								{#if trackVariants.length > 0}
+									<MenuPanel
+										bind:value={$quality}
+										on:change={handleQuality}
+										title="Quality"
+										items={qualities}
+									>
+										<div slot="trigger-button">
+											<Settings class="w-5 h-5 md:w-6 md:h-6" />
+										</div>
+									</MenuPanel>
+								{/if}
+								<button
+									title="Fullscreen"
+									type="button"
+									on:click={toggleFullscreen}
+									aria-label="Fullscreen"
+								>
+									{#if $isFullscreen}
+										<Minimize class="w-5 h-5 md:w-6 md:h-6" />
+									{:else}
+										<Fullscreen class="w-5 h-5 md:w-6 md:h-6" />
+									{/if}
+								</button>
+							</div>
+						</div>
+					{/if}
+				</MediaQuery>
 			</div>
 		</div>
 	{/if}
 </div>
-
-<style lang="scss">
-	.vedash {
-		color: var(--primaryColor);
-	}
-</style>

@@ -58,6 +58,7 @@
     "@floating-ui/core": "^1.5.0",
     "lucide-svelte": "^0.292.0",
     "shaka-player": "^4.6.1",
-    "svelte-floating-ui": "^1.5.6"
+    "svelte-floating-ui": "^1.5.6",
+    "svelte-media-queries": "^1.6.2"
   }
 }
