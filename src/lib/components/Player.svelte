@@ -420,11 +420,7 @@
 				</div>
 			{/if}
 			<div class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent">
-				<div class="flex items-center justify-between text-sm text-white">
-					<p>{formatDuration($currentTime)}</p>
-					<p>{formatDuration($totalDuration)}</p>
-				</div>
-				<div class="relative mb-1">
+				<div class="relative mb-2">
 					<div
 						style="width: {$bufferedWidth}%;"
 						class="vedash__buffered bg-gray-400 h-[3px] absolute left-0 top-[62%] pointer-events-none rounded-[12px]"
@@ -442,31 +438,34 @@
 						bind:value={$currentTime}
 					/>
 				</div>
-				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-2.5">
-						<button type="button" on:click={toggleMute} title="Mute" class="text-white">
-							{#if $isMuted || $volume === 0}
-								<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
-							{:else if $volume > 0.5}
-								<Volume2 class="w-5 h-5 md:w-6 md:h-6" />
-							{:else if $volume <= 0.5}
-								<Volume1 class="w-5 h-5 md:w-6 md:h-6" />
-							{/if}
-						</button>
-						<Slider
-							--primaryColor="#FFFFFF"
-							on:input={updateVolume}
-							class="max-w-[5rem] rounded-xl bg-white"
-							label="Volume slider"
-							name="volume"
-							id="volume"
-							step={0.1}
-							min={0}
-							max={1}
-							bind:value={$volume}
-						/>
+				<div class="flex items-center justify-between text-white">
+					<div class="flex items-center gap-3">
+						<div class="flex items-center gap-2.5 group">
+							<button type="button" on:click={toggleMute} title="Mute">
+								{#if $isMuted || $volume === 0}
+									<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
+								{:else if $volume > 0.5}
+									<Volume2 class="w-5 h-5 md:w-6 md:h-6" />
+								{:else if $volume <= 0.5}
+									<Volume1 class="w-5 h-5 md:w-6 md:h-6" />
+								{/if}
+							</button>
+							<Slider
+								--primaryColor="#FFFFFF"
+								on:input={updateVolume}
+								class="max-w-[5rem] rounded-xl bg-white"
+								label="Volume slider"
+								name="volume"
+								id="volume"
+								step={0.1}
+								min={0}
+								max={1}
+								bind:value={$volume}
+							/>
+						</div>
+						<p class="text-sm">{formatDuration($currentTime)} / {formatDuration($totalDuration)}</p>
 					</div>
-					<div class="flex items-center gap-5 text-white">
+					<div class="flex items-center gap-5">
 						<button
 							type="button"
 							on:click={toggleLoop}
