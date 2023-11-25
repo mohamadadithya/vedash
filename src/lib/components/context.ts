@@ -1,8 +1,13 @@
 import { getContext, setContext } from 'svelte';
 import { writable, type Writable } from 'svelte/store';
+import { tweened, type Tweened } from 'svelte/motion';
+import { cubicOut } from 'svelte/easing';
 
 const setStates = () => {
-	const currentTime: Writable<number> = writable(0),
+	const currentTime: Tweened<number> = tweened(0, {
+			duration: 350,
+			easing: cubicOut
+		}),
 		volume: Writable<number> = writable(1),
 		totalDuration: Writable<number | undefined> = writable(),
 		isPaused: Writable<boolean> = writable(true),
@@ -15,7 +20,8 @@ const setStates = () => {
 		isLoaded: Writable<boolean> = writable(false),
 		quality: Writable<string> = writable('Auto'),
 		isOnline: Writable<boolean> = writable(true),
-		isBuffering: Writable<boolean> = writable(false);
+		isBuffering: Writable<boolean> = writable(false),
+		bufferedWidth: Tweened<number> = tweened(0);
 
 	setContext('currentTime', currentTime);
 	setContext('volume', volume);
@@ -31,11 +37,12 @@ const setStates = () => {
 	setContext('quality', quality);
 	setContext('isOnline', isOnline);
 	setContext('isBuffering', isBuffering);
+	setContext('bufferedWidth', bufferedWidth);
 };
 
 const getStates = () => {
 	return {
-		currentTime: getContext<Writable<number>>('currentTime'),
+		currentTime: getContext<Tweened<number>>('currentTime'),
 		volume: getContext<Writable<number>>('volume'),
 		totalDuration: getContext<Writable<number | undefined>>('totalDuration'),
 		isPaused: getContext<Writable<boolean>>('isPaused'),
@@ -48,7 +55,8 @@ const getStates = () => {
 		isLoaded: getContext<Writable<boolean>>('isLoaded'),
 		quality: getContext<Writable<string>>('quality'),
 		isOnline: getContext<Writable<boolean>>('isOnline'),
-		isBuffering: getContext<Writable<boolean>>('isBuffering')
+		isBuffering: getContext<Writable<boolean>>('isBuffering'),
+		bufferedWidth: getContext<Tweened<number>>('bufferedWidth')
 	};
 };
 

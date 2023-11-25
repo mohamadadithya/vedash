@@ -17,8 +17,9 @@
 	import { setStates, getStates } from './context.js';
 	import MenuPanel from './MenuPanel.svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+	import { beforeUpdate, createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import shaka, { Player } from 'shaka-player';
+	import Slider from './Slider.svelte';
 
 	setStates();
 	const {
@@ -35,7 +36,8 @@
 		isLoaded,
 		quality,
 		isOnline,
-		isBuffering
+		isBuffering,
+		bufferedWidth
 	} = getStates();
 
 	const dispatch = createEventDispatcher();
@@ -47,7 +49,11 @@
 		crossorigin: 'anonymous' | 'use-credentials' | '' = '';
 
 	let playerEl: HTMLDivElement,
-		className = '';
+		className = '',
+		idleTimer: ReturnType<typeof setTimeout>,
+		idleState = false,
+		time = 3000,
+		videoEl: HTMLVideoElement;
 
 	export { className as class };
 
@@ -85,8 +91,6 @@
 		}
 	};
 
-	let videoEl: HTMLVideoElement;
-
 	const togglePlay = () => {
 		if (videoEl.paused) {
 			videoEl.play();
@@ -116,9 +120,7 @@
 
 	const seekedVideo = async () => {
 		await togglePlay();
-
 		$isSeeking = false;
-		$volume = 1;
 	};
 
 	const playbackSpeeds = [0.5, 1, 1.5, 2].map((rate) => {
@@ -173,11 +175,12 @@
 	const setCurrentTime = (event: Event) => {
 		const videoEl = event.target as HTMLVideoElement;
 		$currentTime = videoEl.currentTime;
-	};
 
-	let idleTimer: ReturnType<typeof setTimeout>,
-		idleState = false,
-		time = 3000;
+		if (videoEl.buffered.length > 0 && $totalDuration) {
+			const width = (100 * videoEl.buffered.end(0)) / $totalDuration;
+			$bufferedWidth = width;
+		}
+	};
 
 	const handleIdle = (event: Event) => {
 		const targetEl = event.target as HTMLElement;
@@ -384,17 +387,20 @@
 	{/if}
 	{#if $isBuffering}
 		<div class="absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 pointer-events-none">
-			<Loader class="w-8 h-8 md:w-12 md:h-12 animate-spin" />
+			<Loader class="w-8 h-8 md:w-12 md:h-12 animate-spin text-white" />
 		</div>
 	{/if}
 	{#if $isShowControls && $isLoaded}
 		<div class="vedash__controls">
 			{#if !$isBuffering}
 				<div
-					class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4"
+					class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 text-white"
 				>
-					<button type="button" aria-label="Backward" title="Previous"
-						><FastForward class="-scale-x-[1] w-8 h-8 md:w-12 md:h-12" /></button
+					<button
+						on:click={() => dispatch('prev')}
+						type="button"
+						aria-label="Backward"
+						title="Previous"><FastForward class="-scale-x-[1] w-8 h-8 md:w-12 md:h-12" /></button
 					>
 					<button
 						on:click={togglePlay}
@@ -408,32 +414,37 @@
 							<Pause class="w-8 h-8 md:w-12 md:h-12" />
 						{/if}
 					</button>
-					<button type="button" aria-label="Forward" title="Next"
+					<button on:click={() => dispatch('next')} type="button" aria-label="Forward" title="Next"
 						><FastForward class="w-8 h-8 md:w-12 md:h-12" /></button
 					>
 				</div>
 			{/if}
 			<div class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent">
-				<div class="flex items-center justify-between text-sm">
+				<div class="flex items-center justify-between text-sm text-white">
 					<p>{formatDuration($currentTime)}</p>
 					<p>{formatDuration($totalDuration)}</p>
 				</div>
-				<input
-					on:input={updateCurrentTime}
-					on:change={seekedVideo}
-					class="w-full rounded-xl h-1"
-					aria-label="Video duration slider"
-					type="range"
-					name="duration"
-					id="duration"
-					min={0}
-					step={0.001}
-					max={$totalDuration}
-					bind:value={$currentTime}
-				/>
+				<div class="relative mb-1">
+					<div
+						style="width: {$bufferedWidth}%;"
+						class="vedash__buffered bg-gray-400 h-[3px] absolute left-0 top-[62%] pointer-events-none rounded-[12px]"
+					/>
+					<Slider
+						on:input={updateCurrentTime}
+						on:change={seekedVideo}
+						class="relative"
+						label="Video duration slider"
+						name="duration"
+						id="duration"
+						min={0}
+						max={$totalDuration}
+						step={0.001}
+						bind:value={$currentTime}
+					/>
+				</div>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-2.5">
-						<button type="button" on:click={toggleMute} title="Mute">
+						<button type="button" on:click={toggleMute} title="Mute" class="text-white">
 							{#if $isMuted || $volume === 0}
 								<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
 							{:else if $volume > 0.5}
@@ -442,11 +453,11 @@
 								<Volume1 class="w-5 h-5 md:w-6 md:h-6" />
 							{/if}
 						</button>
-						<input
+						<Slider
+							--primaryColor="#FFFFFF"
 							on:input={updateVolume}
-							class="w-full max-w-[5rem] h-0.5 rounded-xl bg-white"
-							aria-label="Volume slider"
-							type="range"
+							class="max-w-[5rem] rounded-xl bg-white"
+							label="Volume slider"
 							name="volume"
 							id="volume"
 							step={0.1}
@@ -455,7 +466,7 @@
 							bind:value={$volume}
 						/>
 					</div>
-					<div class="flex items-center gap-5">
+					<div class="flex items-center gap-5 text-white">
 						<button
 							type="button"
 							on:click={toggleLoop}
@@ -512,199 +523,5 @@
 <style lang="scss">
 	.vedash {
 		color: var(--primaryColor);
-	}
-
-	input[type='range'] {
-		color: var(--primaryColor);
-		--thumb-height: 0.8em;
-		--track-height: 0.15em;
-		--track-color: hsla(0, 0%, 80%, 0.5);
-		--brightness-hover: 180%;
-		--brightness-down: 80%;
-		--clip-edges: 0.125em;
-
-		position: relative;
-		background: #fff0;
-		overflow: hidden;
-
-		&:is(#duration) {
-			width: 100%;
-			cursor: pointer;
-		}
-
-		&:active {
-			cursor: pointer;
-		}
-
-		&:disabled {
-			filter: grayscale(1);
-			opacity: 0.3;
-			cursor: not-allowed;
-		}
-
-		&,
-		&::-webkit-slider-runnable-track,
-		&::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			height: var(--thumb-height);
-			position: relative;
-		}
-
-		&:is(#duration):hover {
-			--clip-edges: 0.125em;
-			&::-webkit-slider-thumb {
-				--box-fill: calc(-100vmax - var(--thumb-width, var(--thumb-height))) 0 0 100vmax
-					currentColor;
-				--clip-further: calc(100% + 1px);
-				width: var(--thumb-width, var(--thumb-height));
-				clip-path: polygon(
-					100% -1px,
-					var(--clip-edges) -1px,
-					0 var(--clip-top),
-					-100vmax var(--clip-top),
-					-100vmax var(--clip-bottom),
-					0 var(--clip-bottom),
-					var(--clip-edges) 100%,
-					var(--clip-further) var(--clip-further)
-				);
-			}
-
-			&::-moz-range-thumb {
-				width: var(--thumb-width, var(--thumb-height));
-			}
-		}
-
-		&:is(#duration) {
-			--clip-edges: 0;
-			&::-webkit-slider-thumb {
-				--box-fill: calc(-100vmax - var(--thumb-width, var(--thumb-height))) 0 0 105vmax
-					currentColor;
-				--clip-further: 0;
-
-				width: 0;
-				clip-path: polygon(
-					0% 0px,
-					var(--clip-edges) 0px,
-					0 var(--clip-top),
-					-100vmax var(--clip-top),
-					-100vmax var(--clip-bottom),
-					0 var(--clip-bottom),
-					var(--clip-edges) 0%,
-					var(--clip-further) var(--clip-further)
-				);
-			}
-
-			&::-moz-range-thumb {
-				width: 0;
-			}
-		}
-
-		&::-webkit-slider-thumb {
-			--thumb-radius: calc((var(--thumb-height) * 0.5) - 1px);
-			--clip-top: calc((var(--thumb-height) - var(--track-height)) * 0.5 - 0.5px);
-			--clip-bottom: calc(var(--thumb-height) - var(--clip-top));
-			--clip-further: calc(100% + 1px);
-			--box-fill: calc(-100vmax - var(--thumb-width, var(--thumb-height))) 0 0 100.028vmax
-				currentColor;
-
-			width: var(--thumb-width, var(--thumb-height));
-			background: linear-gradient(currentColor 0 0) scroll no-repeat left center / 50%
-				calc(var(--track-height) + 1px);
-			background-color: currentColor;
-			box-shadow: var(--box-fill);
-			border-radius: var(--thumb-width, var(--thumb-height));
-
-			filter: brightness(100%);
-			clip-path: polygon(
-				100% -1px,
-				var(--clip-edges) -1px,
-				0 var(--clip-top),
-				-100vmax var(--clip-top),
-				-100vmax var(--clip-bottom),
-				0 var(--clip-bottom),
-				var(--clip-edges) 100%,
-				var(--clip-further) var(--clip-further)
-			);
-		}
-
-		&:hover::-webkit-slider-thumb {
-			filter: brightness(var(--brightness-hover));
-			cursor: pointer;
-		}
-
-		&:active::-webkit-slider-thumb {
-			filter: brightness(var(--brightness-down));
-			cursor: pointer;
-		}
-
-		&::-webkit-slider-runnable-track {
-			background: linear-gradient(var(--track-color) 0 0) scroll no-repeat center / 100%
-				calc(var(--track-height) + 1px);
-		}
-
-		&:disabled::-webkit-slider-thumb {
-			cursor: not-allowed;
-		}
-
-		&,
-		&::-moz-range-track,
-		&::-moz-range-thumb {
-			appearance: none;
-			height: var(--thumb-height);
-		}
-
-		&::-moz-range-track,
-		&::-moz-range-thumb,
-		&::-moz-range-progress {
-			background: #fff0;
-		}
-
-		&::-moz-range-thumb {
-			background: currentColor;
-			border: 0;
-			width: var(--thumb-width, var(--thumb-height));
-			border-radius: var(--thumb-width, var(--thumb-height));
-			cursor: pointer;
-		}
-
-		&:active::-moz-range-thumb {
-			cursor: pointer;
-		}
-
-		&::-moz-range-track {
-			width: 100%;
-			background: var(--track-color);
-		}
-
-		&::-moz-range-progress {
-			appearance: none;
-			background: currentColor;
-			transition-delay: 30ms;
-		}
-
-		&::-moz-range-track,
-		&::-moz-range-progress {
-			height: calc(var(--track-height) + 1px);
-			border-radius: var(--track-height);
-		}
-
-		&::-moz-range-thumb,
-		&::-moz-range-progress {
-			filter: brightness(100%);
-		}
-
-		&:hover::-moz-range-thumb,
-		&:hover::-moz-range-progress {
-			filter: brightness(var(--brightness-hover));
-		}
-
-		&:active::-moz-range-thumb,
-		&:active::-moz-range-progress {
-			filter: brightness(var(--brightness-down));
-		}
-
-		&:disabled::-moz-range-thumb {
-			cursor: not-allowed;
-		}
 	}
 </style>
