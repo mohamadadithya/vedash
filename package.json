@@ -6,6 +6,7 @@
     "@sveltejs/adapter-vercel": "^3.1.0",
     "@sveltejs/kit": "^1.27.4",
     "@sveltejs/package": "^2.0.0",
+    "@types/idle-js": "^1.2.3",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "autoprefixer": "^10.4.16",
@@ -56,6 +57,7 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@floating-ui/core": "^1.5.0",
+    "idle-js": "^1.2.0",
     "shaka-player": "^4.6.1",
     "svelte-floating-ui": "^1.5.6",
     "svelte-media-queries": "^1.6.2"

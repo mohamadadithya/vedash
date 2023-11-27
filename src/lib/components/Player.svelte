@@ -24,6 +24,7 @@
 		Volume2,
 		VolumeX
 	} from '$vedash/icons';
+	import type IdleJs from 'idle-js';
 
 	setStates();
 	const {
@@ -55,12 +56,13 @@
 		crossorigin: 'anonymous' | 'use-credentials' | '' = '';
 
 	let playerEl: HTMLDivElement,
+		playerInstance: Player,
 		className = '',
 		idleTimer: ReturnType<typeof setTimeout>,
 		idleState = false,
-		time = 3000,
 		videoEl: HTMLVideoElement,
-		isLandscape = false;
+		isLandscape = false,
+		idleInstance: IdleJs;
 
 	export { className as class };
 
@@ -124,13 +126,7 @@
 		}
 	};
 
-	const updateFullscreenState = () => {
-		if (document.fullscreenElement) {
-			$isFullscreen = true;
-		} else {
-			$isFullscreen = false;
-		}
-	};
+	const updateFullscreenState = () => ($isFullscreen = !!document.fullscreenElement);
 
 	const seekedVideo = async () => {
 		await togglePlay();
@@ -196,34 +192,15 @@
 		}
 	};
 
-	const handleIdle = (event: Event) => {
-		const targetEl = event.target as HTMLElement;
-		const controlsEl = targetEl?.closest('.vedash__controls');
-
-		clearTimeout(idleTimer);
-
-		if (idleState) $isShowControls = true;
-
-		idleState = false;
-		idleTimer = setTimeout(() => {
-			if (!controlsEl && !$isPaused && !$isOpenPlaybackSettings) {
-				$isShowControls = false;
-				idleState = true;
-			}
-		}, time);
-	};
-
 	const handleMouseMove = (event: Event) => {
 		const targetEl = event.target as HTMLElement;
 		const controlsEl = targetEl?.closest('.vedash__controls');
 		const videoEl = targetEl?.closest('.vedash__video');
 		const query = window.matchMedia('(min-width: 1024px)');
 
-		if (query.matches && !isLandscape) {
-			handleIdle(event);
-		} else {
-			if (!controlsEl && !videoEl) $isShowControls = false;
-		}
+		// if (!query.matches && isLandscape) {
+		// 	if (!controlsEl && !videoEl) $isShowControls = false;
+		// }
 	};
 
 	const handleMouseLeave = () => {
@@ -255,10 +232,28 @@
 	const addNetworkListeners = () => updateOnlineStatus();
 	const trackVariants: shaka.extern.Track[] = [];
 
-	let playerInstance: Player;
-
 	onMount(async () => {
+		const { default: IdleJs } = await import('idle-js');
 		$isOnline = window.navigator.onLine;
+
+		idleInstance = new IdleJs({
+			idle: 3000,
+			events: ['mousemove', 'keydown', 'touchstart', 'touchend', 'mousedown', 'click'],
+			onIdle: () => {
+				if ($isPaused) {
+					idleInstance.reset().stop();
+				} else {
+					$isShowControls = false;
+				}
+			},
+			onActive: () => {
+				const query = window.matchMedia('(min-width: 1024px)');
+
+				if (query.matches) $isShowControls = true;
+			}
+		});
+
+		idleInstance.start();
 
 		const initShaka = () => {
 			shaka.polyfill.installAll();
@@ -273,7 +268,6 @@
 
 		const initPlayer = async () => {
 			playerInstance = new shaka.Player(videoEl);
-
 			playerInstance.configure({
 				abr: {
 					defaultBandwidthEstimate: 10000000
@@ -326,6 +320,7 @@
 
 	onDestroy(() => {
 		if (playerInstance) playerInstance.destroy();
+		if (idleInstance) idleInstance.reset().stop();
 	});
 
 	const handleQuality = (event: CustomEvent) => {
@@ -356,17 +351,23 @@
 	const handleVideoClicked = () => {
 		const query = window.matchMedia('(min-width: 1024px)');
 
-		if (query.matches && !isLandscape) {
-			togglePlay();
-		} else {
-			$isShowControls = $isShowControls ? false : true;
-		}
+		if (query.matches && !isLandscape) togglePlay();
 	};
 
 	const handleOrientation = () => (isLandscape = screen.orientation.type.startsWith('landscape'));
+
+	const handleClicked = (event: Event) => {
+		const query = window.matchMedia('(max-width: 1024px)');
+
+		if (query.matches) {
+			const targetEl = event.target as HTMLElement;
+			$isShowControls = !targetEl.contains(playerEl);
+		}
+	};
 </script>
 
 <svelte:window
+	on:click={handleClicked}
 	on:keydown={setShortcuts}
 	on:mousemove={handleMouseMove}
 	on:online={updateOnlineStatus}
