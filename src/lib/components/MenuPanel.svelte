@@ -5,17 +5,12 @@
 	import { createEventDispatcher } from 'svelte';
 	import type { ItemObject } from '$lib/types.js';
 
-	export let items: ItemObject[],
-		title: string,
-		value = '';
+	export let items: ItemObject[], title: string, value: unknown;
 
 	let isShow = false;
 
-	$: selectedLabel = value;
-
 	const dispatch = createEventDispatcher();
 	const changeEvent = (item: ItemObject) => {
-		value = item.label;
 		dispatch('change', { data: item.value });
 	};
 
@@ -48,7 +43,7 @@
 						<button
 							on:click={() => changeEvent(item)}
 							type="button"
-							class="w-full {item.label.includes(selectedLabel)
+							class="w-full {item.value == value
 								? 'bg-gray-300'
 								: ''} hover:bg-gray-200 px-5 py-2 text-sm">{item.label}</button
 						>

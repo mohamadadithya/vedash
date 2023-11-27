@@ -55,7 +55,7 @@ const getStates = () => {
 		isMuted: getContext<Writable<boolean>>('isMuted'),
 		isLoopMode: getContext<Writable<boolean>>('isLoopMode'),
 		isLoaded: getContext<Writable<boolean>>('isLoaded'),
-		quality: getContext<Writable<string>>('quality'),
+		quality: getContext<Writable<number | null>>('quality'),
 		isOnline: getContext<Writable<boolean>>('isOnline'),
 		isBuffering: getContext<Writable<boolean>>('isBuffering'),
 		bufferedWidth: getContext<Tweened<number>>('bufferedWidth'),

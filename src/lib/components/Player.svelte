@@ -146,7 +146,7 @@
 
 	const setPlaybackSpeed = (event: CustomEvent) => {
 		const speed = event.detail.data;
-		$playbackRate = +speed!;
+		$playbackRate = +speed;
 	};
 
 	const handleSkipFrames = (activeEl: HTMLElement, status: 'forward' | 'backward') => {
@@ -262,7 +262,6 @@
 	const trackVariants: shaka.extern.Track[] = [];
 
 	let player: Player,
-		selectedPlaybackRate = `${$playbackRate}x`,
 		qualities: ItemObject[] = [];
 
 	onMount(async () => {
@@ -337,7 +336,8 @@
 	});
 
 	const handleQuality = (event: CustomEvent) => {
-		const selectedVariantId = !event.detail.data ? null : +event.detail.data;
+		const selectedVariantId =
+			!event.detail.data && typeof event.detail.data !== 'number' ? null : +event.detail.data;
 		const selectedVariant = trackVariants.find(
 			(track) => track.id === selectedVariantId
 		) as shaka.extern.Track;
@@ -346,10 +346,8 @@
 			const variant = trackVariants.find((track) => track.id === selectedVariant.id);
 
 			if (variant) {
-				const selectedQuality = qualities.find(
-					(quality) => quality.label === `${variant?.height}p`
-				);
-				if (selectedQuality) $quality = selectedQuality.label as string;
+				const selectedQuality = qualities.find((quality) => quality.value === variant.id);
+				if (selectedQuality) $quality = selectedQuality.value as number;
 
 				player.configure({ abr: { enabled: false } });
 				player.selectVariantTrack(variant, true);
@@ -357,7 +355,7 @@
 				console.error(`Couldn't set quality`);
 			}
 		} else {
-			$quality = 'Auto';
+			$quality = null;
 			player.configure({ abr: { enabled: true } });
 		}
 	};
@@ -458,16 +456,14 @@
 									<X />
 								</button>
 								<div class="grid gap-4">
-									{#if trackVariants.length > 0}
-										<Select
-											on:change={handleQuality}
-											label="Quality"
-											id="quality"
-											name="quality"
-											items={qualities}
-											bind:value={$quality}
-										/>
-									{/if}
+									<Select
+										on:change={handleQuality}
+										label="Quality"
+										id="quality"
+										name="quality"
+										items={qualities}
+										bind:value={$quality}
+									/>
 									<Select
 										on:change={setPlaybackSpeed}
 										label="Speed"
@@ -605,25 +601,23 @@
 									<Repeat2 class="w-5 h-5 md:w-6 md:h-6" />
 								</button>
 								<MenuPanel
-									bind:value={selectedPlaybackRate}
+									bind:value={$playbackRate}
 									title="Speed"
 									items={playbackRates}
 									on:change={setPlaybackSpeed}
 								>
 									<span slot="trigger-button" class="font-semibold text-base md:text-lg">1x</span>
 								</MenuPanel>
-								{#if trackVariants.length > 0}
-									<MenuPanel
-										bind:value={$quality}
-										on:change={handleQuality}
-										title="Quality"
-										items={qualities}
-									>
-										<div slot="trigger-button">
-											<Settings class="w-5 h-5 md:w-6 md:h-6" />
-										</div>
-									</MenuPanel>
-								{/if}
+								<MenuPanel
+									bind:value={$quality}
+									on:change={handleQuality}
+									title="Quality"
+									items={qualities}
+								>
+									<div slot="trigger-button">
+										<Settings class="w-5 h-5 md:w-6 md:h-6" />
+									</div>
+								</MenuPanel>
 								<button
 									title="Fullscreen"
 									type="button"
