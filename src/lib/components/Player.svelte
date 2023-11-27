@@ -215,8 +215,8 @@
 
 	const handleMouseMove = (event: Event) => {
 		const targetEl = event.target as HTMLElement;
-		const controlsEl = targetEl.closest('.vedash__controls');
-		const videoEl = targetEl.closest('.vedash__video');
+		const controlsEl = targetEl?.closest('.vedash__controls');
+		const videoEl = targetEl?.closest('.vedash__video');
 		const query = window.matchMedia('(min-width: 1024px)');
 
 		if (query.matches && !isLandscape) {
@@ -233,8 +233,8 @@
 		} else {
 			document.addEventListener('mousemove', (event: Event) => {
 				const targetEl = event.target as HTMLElement;
-				const controlsEl = targetEl.closest('.vedash__controls');
-				const videoEl = targetEl.closest('.vedash__video');
+				const controlsEl = targetEl?.closest('.vedash__controls');
+				const videoEl = targetEl?.closest('.vedash__video');
 
 				if (!controlsEl && !videoEl && !$isPaused) $isShowControls = false;
 			});
