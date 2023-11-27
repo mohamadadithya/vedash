@@ -215,7 +215,7 @@
 
 	const handleMouseMove = (event: Event) => {
 		const query = window.matchMedia('(min-width: 540px)');
-		if (query.matches || !isLandscape) handleIdle(event);
+		if (query.matches && !isLandscape) handleIdle(event);
 	};
 
 	const handleMouseEnter = () => ($isShowControls = true);
@@ -357,7 +357,7 @@
 
 	const handleVideoClicked = (event: Event) => {
 		const query = window.matchMedia('(min-width: 540px)');
-		if (query.matches || !isLandscape) {
+		if (query.matches && !isLandscape) {
 			togglePlay();
 		} else {
 			$isShowControls = !$isShowControls;
