@@ -1,30 +1,29 @@
 <script lang="ts">
+	import { formatDuration } from '$lib/utils.js';
+	import { setStates, getStates } from '$lib/context.js';
+	import MenuPanel from '$components/MenuPanel.svelte';
+	import { fade, fly } from 'svelte/transition';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+	import shaka, { type Player } from 'shaka-player';
+	import Slider from '$components/Slider.svelte';
+	import MediaQuery from 'svelte-media-queries';
+	import Select from '$components/Select.svelte';
+	import Toggle from '$components/Toggle.svelte';
 	import {
-		CheckCircle2,
+		CheckCircle,
+		Close,
+		Play,
+		Pause,
 		FastForward,
 		Fullscreen,
-		Loader,
 		Minimize,
-		Pause,
-		Play,
-		Repeat2,
+		Loop,
+		Loader,
 		Settings,
 		Volume1,
 		Volume2,
-		VolumeX,
-		X
-	} from 'lucide-svelte';
-	import { formatDuration } from '$lib/utils.js';
-	import { setStates, getStates } from './context.js';
-	import MenuPanel from './MenuPanel.svelte';
-	import { fade, fly } from 'svelte/transition';
-	import { beforeUpdate, createEventDispatcher, onDestroy, onMount } from 'svelte';
-	import shaka, { type Player } from 'shaka-player';
-	import Slider from './Slider.svelte';
-	import MediaQuery from 'svelte-media-queries';
-	import Select from './Select.svelte';
-	import type { ItemObject } from '$lib/types.js';
-	import Toggle from './Toggle.svelte';
+		VolumeX
+	} from '$vedash/icons';
 
 	setStates();
 	const {
@@ -35,7 +34,7 @@
 		isShowControls,
 		isFullscreen,
 		isSeeking,
-		playbackRate,
+		playbackSpeed,
 		isMuted,
 		isLoopMode,
 		isLoaded,
@@ -43,7 +42,8 @@
 		isOnline,
 		isBuffering,
 		bufferedWidth,
-		isOpenPlaybackSettings
+		isOpenPlaybackSettings,
+		qualities
 	} = getStates();
 
 	const dispatch = createEventDispatcher();
@@ -137,7 +137,7 @@
 		$isSeeking = false;
 	};
 
-	const playbackRates = [0.5, 1, 1.5, 2].map((rate) => {
+	const playbackSpeeds = [0.5, 1, 1.5, 2].map((rate) => {
 		return {
 			label: `${rate}x`,
 			value: rate
@@ -146,7 +146,7 @@
 
 	const setPlaybackSpeed = (event: CustomEvent) => {
 		const speed = event.detail.data;
-		$playbackRate = +speed;
+		$playbackSpeed = +speed;
 	};
 
 	const handleSkipFrames = (activeEl: HTMLElement, status: 'forward' | 'backward') => {
@@ -250,19 +250,12 @@
 		dispatch('ended');
 	};
 
-	const updateOnlineStatus = () => {
-		if (window.navigator.onLine) {
-			$isOnline = true;
-		} else {
-			$isOnline = false;
-		}
-	};
+	const updateOnlineStatus = () => ($isOnline = window.navigator.onLine);
 
 	const addNetworkListeners = () => updateOnlineStatus();
 	const trackVariants: shaka.extern.Track[] = [];
 
-	let player: Player,
-		qualities: ItemObject[] = [];
+	let playerInstance: Player;
 
 	onMount(async () => {
 		$isOnline = window.navigator.onLine;
@@ -279,36 +272,36 @@
 		};
 
 		const initPlayer = async () => {
-			player = new shaka.Player(videoEl);
+			playerInstance = new shaka.Player(videoEl);
 
-			player.configure({
+			playerInstance.configure({
 				abr: {
 					defaultBandwidthEstimate: 10000000
 				}
 			});
 
-			player.addEventListener('trackschanged', () => {
-				player.getVariantTracks().forEach((track) => {
+			playerInstance.addEventListener('trackschanged', () => {
+				playerInstance.getVariantTracks().forEach((track) => {
 					trackVariants.push(track);
-					qualities = trackVariants.map((track) => {
+					$qualities = trackVariants.map((track) => {
 						return {
 							label: `${track.height}p`,
 							value: track.id
 						};
 					});
 
-					qualities.unshift({
-						label: 'Auto',
-						value: null
-					});
+					$qualities.unshift({ label: 'Auto', value: null });
 				});
 			});
 
-			player.addEventListener('error', console.error);
-			player.addEventListener('buffering', (event: any) => ($isBuffering = event.buffering));
+			playerInstance.addEventListener('error', console.error);
+			playerInstance.addEventListener(
+				'buffering',
+				(event: any) => ($isBuffering = event.buffering)
+			);
 
 			try {
-				await player.load(src);
+				await playerInstance.load(src);
 				console.log('Player has loaded the video');
 			} catch (error) {
 				console.log(error);
@@ -332,7 +325,7 @@
 	});
 
 	onDestroy(() => {
-		if (player) player.destroy();
+		if (playerInstance) playerInstance.destroy();
 	});
 
 	const handleQuality = (event: CustomEvent) => {
@@ -346,17 +339,17 @@
 			const variant = trackVariants.find((track) => track.id === selectedVariant.id);
 
 			if (variant) {
-				const selectedQuality = qualities.find((quality) => quality.value === variant.id);
+				const selectedQuality = $qualities.find((quality) => quality.value === variant.id);
 				if (selectedQuality) $quality = selectedQuality.value as number;
 
-				player.configure({ abr: { enabled: false } });
-				player.selectVariantTrack(variant, true);
+				playerInstance.configure({ abr: { enabled: false } });
+				playerInstance.selectVariantTrack(variant, true);
 			} else {
 				console.error(`Couldn't set quality`);
 			}
 		} else {
 			$quality = null;
-			player.configure({ abr: { enabled: true } });
+			playerInstance.configure({ abr: { enabled: true } });
 		}
 	};
 
@@ -406,7 +399,7 @@
 		on:timeupdate={setCurrentTime}
 		on:click={handleVideoClicked}
 		bind:duration={$totalDuration}
-		bind:playbackRate={$playbackRate}
+		bind:playbackRate={$playbackSpeed}
 		bind:volume={$volume}
 		bind:muted={$isMuted}
 		on:mouseenter={() => ($isShowControls = true)}
@@ -418,12 +411,12 @@
 	{#if $isSeeking || ($isShowControls && $isLoaded) || $isBuffering}
 		<div
 			transition:fade={{ duration: 200 }}
-			class="absolute w-full h-full bg-black top-0 left-0 bg-opacity-40 pointer-events-none"
+			class="absolute w-full h-full bg-black top-0 left-0 bg-opacity-30 pointer-events-none"
 		/>
 	{/if}
 	{#if $isBuffering}
 		<div class="absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 pointer-events-none">
-			<Loader class="w-8 h-8 md:w-12 md:h-12 animate-spin text-white" />
+			<Loader class="w-12 h-12 md:w-14 md:h-14 text-white" />
 		</div>
 	{/if}
 	{#if $isShowControls && $isLoaded}
@@ -453,7 +446,7 @@
 									type="button"
 									class="absolute top-5 right-5"
 								>
-									<X />
+									<Close class="w-6 h-6" />
 								</button>
 								<div class="grid gap-4">
 									<Select
@@ -461,7 +454,7 @@
 										label="Quality"
 										id="quality"
 										name="quality"
-										items={qualities}
+										items={$qualities}
 										bind:value={$quality}
 									/>
 									<Select
@@ -469,8 +462,8 @@
 										label="Speed"
 										id="speed"
 										name="speed"
-										items={playbackRates}
-										bind:value={$playbackRate}
+										items={playbackSpeeds}
+										bind:value={$playbackSpeed}
 									/>
 									<Toggle
 										id="loop-mode"
@@ -493,7 +486,7 @@
 						on:click={() => dispatch('prev')}
 						type="button"
 						aria-label="Backward"
-						title="Previous"><FastForward class="-scale-x-[1] w-8 h-8 md:w-12 md:h-12" /></button
+						title="Previous"><FastForward class="-scale-x-[1] w-12 h-12 md:w-14 md:h-14" /></button
 					>
 					<button
 						on:click={togglePlay}
@@ -502,13 +495,13 @@
 						title={$isPaused ? 'Play' : 'Pause'}
 					>
 						{#if $isPaused}
-							<Play class="w-8 h-8 md:w-12 md:h-12" />
+							<Play class="w-12 h-12 md:w-14 md:h-14" />
 						{:else}
-							<Pause class="w-8 h-8 md:w-12 md:h-12" />
+							<Pause class="w-12 h-12 md:w-14 md:h-14" />
 						{/if}
 					</button>
 					<button on:click={() => dispatch('next')} type="button" aria-label="Forward" title="Next"
-						><FastForward class="w-8 h-8 md:w-12 md:h-12" /></button
+						><FastForward class="w-12 h-12 md:w-14 md:h-14" /></button
 					>
 				</div>
 			{/if}
@@ -594,16 +587,16 @@
 									title="Loop"
 								>
 									{#if $isLoopMode}
-										<CheckCircle2
+										<CheckCircle
 											class="w-3 h-3 md:w-4 md:h-4 fill-white stroke-black absolute -top-1 right-0"
 										/>
 									{/if}
-									<Repeat2 class="w-5 h-5 md:w-6 md:h-6" />
+									<Loop class="w-5 h-5 md:w-6 md:h-6" />
 								</button>
 								<MenuPanel
-									bind:value={$playbackRate}
+									bind:value={$playbackSpeed}
 									title="Speed"
-									items={playbackRates}
+									items={playbackSpeeds}
 									on:change={setPlaybackSpeed}
 								>
 									<span slot="trigger-button" class="font-semibold text-base md:text-lg">1x</span>
@@ -612,7 +605,7 @@
 									bind:value={$quality}
 									on:change={handleQuality}
 									title="Quality"
-									items={qualities}
+									items={$qualities}
 								>
 									<div slot="trigger-button">
 										<Settings class="w-5 h-5 md:w-6 md:h-6" />

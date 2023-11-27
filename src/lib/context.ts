@@ -2,6 +2,7 @@ import { getContext, setContext } from 'svelte';
 import { writable, type Writable } from 'svelte/store';
 import { tweened, type Tweened } from 'svelte/motion';
 import { cubicOut } from 'svelte/easing';
+import type { ItemObject } from './types.js';
 
 const setStates = () => {
 	const currentTime: Tweened<number> = tweened(0, {
@@ -14,7 +15,7 @@ const setStates = () => {
 		isShowControls: Writable<boolean> = writable(true),
 		isFullscreen: Writable<boolean> = writable(false),
 		isSeeking: Writable<boolean> = writable(false),
-		playbackRate: Writable<number> = writable(1),
+		playbackSpeed: Writable<number> = writable(1),
 		isMuted: Writable<boolean> = writable(false),
 		isLoopMode: Writable<boolean> = writable(false),
 		isLoaded: Writable<boolean> = writable(false),
@@ -22,7 +23,8 @@ const setStates = () => {
 		isOnline: Writable<boolean> = writable(true),
 		isBuffering: Writable<boolean> = writable(false),
 		bufferedWidth: Tweened<number> = tweened(0),
-		isOpenPlaybackSettings: Writable<boolean> = writable(false);
+		isOpenPlaybackSettings: Writable<boolean> = writable(false),
+		qualities: Writable<ItemObject[]> = writable([]);
 
 	setContext('currentTime', currentTime);
 	setContext('volume', volume);
@@ -31,7 +33,7 @@ const setStates = () => {
 	setContext('isShowControls', isShowControls);
 	setContext('isFullscreen', isFullscreen);
 	setContext('isSeeking', isSeeking);
-	setContext('playbackRate', playbackRate);
+	setContext('playbackSpeed', playbackSpeed);
 	setContext('isMuted', isMuted);
 	setContext('isLoopMode', isLoopMode);
 	setContext('isLoaded', isLoaded);
@@ -39,7 +41,8 @@ const setStates = () => {
 	setContext('isOnline', isOnline);
 	setContext('isBuffering', isBuffering);
 	setContext('bufferedWidth', bufferedWidth),
-		setContext('isOpenPlaybackSettings', isOpenPlaybackSettings);
+		setContext('isOpenPlaybackSettings', isOpenPlaybackSettings),
+		setContext('qualities', qualities);
 };
 
 const getStates = () => {
@@ -51,7 +54,7 @@ const getStates = () => {
 		isShowControls: getContext<Writable<boolean>>('isShowControls'),
 		isFullscreen: getContext<Writable<boolean>>('isFullscreen'),
 		isSeeking: getContext<Writable<boolean>>('isSeeking'),
-		playbackRate: getContext<Writable<number>>('playbackRate'),
+		playbackSpeed: getContext<Writable<number>>('playbackSpeed'),
 		isMuted: getContext<Writable<boolean>>('isMuted'),
 		isLoopMode: getContext<Writable<boolean>>('isLoopMode'),
 		isLoaded: getContext<Writable<boolean>>('isLoaded'),
@@ -59,7 +62,8 @@ const getStates = () => {
 		isOnline: getContext<Writable<boolean>>('isOnline'),
 		isBuffering: getContext<Writable<boolean>>('isBuffering'),
 		bufferedWidth: getContext<Tweened<number>>('bufferedWidth'),
-		isOpenPlaybackSettings: getContext<Writable<boolean>>('isOpenPlaybackSettings')
+		isOpenPlaybackSettings: getContext<Writable<boolean>>('isOpenPlaybackSettings'),
+		qualities: getContext<Writable<ItemObject[]>>('qualities')
 	};
 };
 

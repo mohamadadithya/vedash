@@ -17,6 +17,11 @@ const config = {
 		}),
 		version: {
 			pollInterval: 5000
+		},
+		alias: {
+			$icons: 'src/lib/components/icons',
+			$components: 'src/lib/components',
+			'$vedash/icons': 'src/lib/components/icons/index.ts'
 		}
 	}
 };
