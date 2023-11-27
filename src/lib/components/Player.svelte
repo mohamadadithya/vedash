@@ -107,9 +107,13 @@
 		}
 	};
 
-	const toggleFullscreen = () => {
+	const toggleFullscreen = async () => {
 		if (!document.fullscreenElement) {
-			playerEl.requestFullscreen();
+			await playerEl.requestFullscreen().catch((error) => {
+				console.error(
+					`Error attempting to enable fullscreen mode: ${error.message} (${error.name})`
+				);
+			});
 		} else if (document.exitFullscreen) {
 			document.exitFullscreen();
 		}
