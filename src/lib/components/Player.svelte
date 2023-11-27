@@ -19,7 +19,7 @@
 	import MenuPanel from './MenuPanel.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-	import shaka, { Player } from 'shaka-player';
+	import shaka, { type Player } from 'shaka-player';
 	import Slider from './Slider.svelte';
 	import MediaQuery from 'svelte-media-queries';
 	import Select from './Select.svelte';
@@ -42,7 +42,8 @@
 		quality,
 		isOnline,
 		isBuffering,
-		bufferedWidth
+		bufferedWidth,
+		isOpenPlaybackSettings
 	} = getStates();
 
 	const dispatch = createEventDispatcher();
@@ -201,7 +202,7 @@
 
 		idleState = false;
 		idleTimer = setTimeout(() => {
-			if (!controlsEl && !$isPaused) {
+			if (!controlsEl && !$isPaused && !$isOpenPlaybackSettings) {
 				$isShowControls = false;
 				idleState = true;
 			}
@@ -350,8 +351,6 @@
 		}
 	};
 
-	let isOpenPlaybackSettings = false;
-
 	const handleVideoClicked = (event: Event) => {
 		const query = window.matchMedia('(min-width: 540px)');
 		if (query.matches) {
@@ -372,7 +371,7 @@
 
 <div
 	bind:this={playerEl}
-	class="relative border border-gray-300 vedash overflow-hidden {className}"
+	class="vedash relative overflow-hidden {className}"
 	on:fullscreenchange={updateFullscreenState}
 	on:contextmenu|preventDefault|stopPropagation
 	role="presentation"
@@ -420,25 +419,25 @@
 			<MediaQuery query="(max-width: 540px)" let:matches>
 				{#if matches}
 					<button
-						on:click={() => (isOpenPlaybackSettings = true)}
+						on:click={() => ($isOpenPlaybackSettings = true)}
 						type="button"
 						class="absolute top-5 right-5"
 					>
 						<Settings class="w-5 h-5 md:w-6 md:h-6" />
 					</button>
-					{#if isOpenPlaybackSettings}
+					{#if $isOpenPlaybackSettings}
 						<div
 							transition:fade={{ duration: 200 }}
 							role="dialog"
 							aria-labelledby="Playback settings"
 							aria-describedby="Custom dialog element for playback settings"
-							aria-modal={isOpenPlaybackSettings}
+							aria-modal={$isOpenPlaybackSettings}
 							class="w-full h-full fixed top-0 left-0 bg-black bg-opacity-40 z-[1] grid place-items-center text-black"
 						>
 							<div class="bg-white p-5 w-full max-w-xs rounded-xl shadow-xl relative">
 								<p class="text-sm uppercase font-semibold mb-4">Playback Settings</p>
 								<button
-									on:click={() => (isOpenPlaybackSettings = false)}
+									on:click={() => ($isOpenPlaybackSettings = false)}
 									type="button"
 									class="absolute top-5 right-5"
 								>

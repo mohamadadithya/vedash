@@ -10,6 +10,6 @@
 		/mpds/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.mpd"
 		disablepictureinpicture={true}
 		crossorigin="anonymous"
-		class="w-full max-w-4xl mx-auto shadow-xl"
+		class="w-full max-w-4xl mx-auto"
 	/>
 </div>

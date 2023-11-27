@@ -21,7 +21,8 @@ const setStates = () => {
 		quality: Writable<number | null> = writable(null),
 		isOnline: Writable<boolean> = writable(true),
 		isBuffering: Writable<boolean> = writable(false),
-		bufferedWidth: Tweened<number> = tweened(0);
+		bufferedWidth: Tweened<number> = tweened(0),
+		isOpenPlaybackSettings: Writable<boolean> = writable(false);
 
 	setContext('currentTime', currentTime);
 	setContext('volume', volume);
@@ -37,7 +38,8 @@ const setStates = () => {
 	setContext('quality', quality);
 	setContext('isOnline', isOnline);
 	setContext('isBuffering', isBuffering);
-	setContext('bufferedWidth', bufferedWidth);
+	setContext('bufferedWidth', bufferedWidth),
+		setContext('isOpenPlaybackSettings', isOpenPlaybackSettings);
 };
 
 const getStates = () => {
@@ -56,7 +58,8 @@ const getStates = () => {
 		quality: getContext<Writable<string>>('quality'),
 		isOnline: getContext<Writable<boolean>>('isOnline'),
 		isBuffering: getContext<Writable<boolean>>('isBuffering'),
-		bufferedWidth: getContext<Tweened<number>>('bufferedWidth')
+		bufferedWidth: getContext<Tweened<number>>('bufferedWidth'),
+		isOpenPlaybackSettings: getContext<Writable<boolean>>('isOpenPlaybackSettings')
 	};
 };
 
