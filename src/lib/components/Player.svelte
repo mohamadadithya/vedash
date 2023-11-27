@@ -240,7 +240,7 @@
 			idle: 3000,
 			events: ['mousemove', 'keydown', 'touchstart', 'touchend', 'mousedown', 'click'],
 			onIdle: () => {
-				if ($isPaused) {
+				if ($isPaused || $isOpenPlaybackSettings) {
 					idleInstance.reset().stop();
 				} else {
 					$isShowControls = false;
@@ -248,7 +248,6 @@
 			},
 			onActive: () => {
 				const query = window.matchMedia('(min-width: 1024px)');
-
 				if (query.matches) $isShowControls = true;
 			}
 		});
