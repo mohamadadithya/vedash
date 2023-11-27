@@ -222,11 +222,10 @@
 		if (query.matches && !isLandscape) {
 			handleIdle(event);
 		} else {
-			if (!controlsEl && !videoEl && !$isPaused) $isShowControls = false;
+			if (!controlsEl && !videoEl) $isShowControls = false;
 		}
 	};
 
-	const handleMouseEnter = () => ($isShowControls = true);
 	const handleMouseLeave = () => {
 		if ($isPaused) {
 			$isShowControls = true;
@@ -412,7 +411,7 @@
 		bind:playbackRate={$playbackRate}
 		bind:volume={$volume}
 		bind:muted={$isMuted}
-		on:mouseenter={handleMouseEnter}
+		on:mouseenter={() => ($isShowControls = true)}
 		on:mouseleave={handleMouseLeave}
 		on:ended={handleEnded}
 	>
