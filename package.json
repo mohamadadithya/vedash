@@ -2,7 +2,6 @@
   "name": "vedash",
   "version": "0.0.1",
   "devDependencies": {
-    "@svelte-put/clickoutside": "^3.0.1",
     "@sveltejs/adapter-auto": "^2.0.0",
     "@sveltejs/kit": "^1.27.4",
     "@sveltejs/package": "^2.0.0",

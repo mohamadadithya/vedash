@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { clickoutside } from '@svelte-put/clickoutside';
 	import { offset, flip, shift } from 'svelte-floating-ui/dom';
 	import { createFloatingActions } from 'svelte-floating-ui';
 	import { createEventDispatcher } from 'svelte';
+	import { clickOutside } from '$lib/actions/click-outside.js';
 	import type { ItemObject } from '$lib/types.js';
 
 	export let items: ItemObject[], title: string, value: unknown;
@@ -21,7 +21,7 @@
 	});
 </script>
 
-<div class="flex flex-col justify-center" use:clickoutside on:clickoutside={() => (isShow = false)}>
+<div class="flex flex-col justify-center" use:clickOutside={() => (isShow = false)}>
 	<button
 		use:floatingRef
 		on:click={() => (isShow = !isShow)}
