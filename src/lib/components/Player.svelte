@@ -18,7 +18,7 @@
 	import { setStates, getStates } from './context.js';
 	import MenuPanel from './MenuPanel.svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+	import { beforeUpdate, createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import shaka, { type Player } from 'shaka-player';
 	import Slider from './Slider.svelte';
 	import MediaQuery from 'svelte-media-queries';
@@ -59,7 +59,8 @@
 		idleTimer: ReturnType<typeof setTimeout>,
 		idleState = false,
 		time = 3000,
-		videoEl: HTMLVideoElement;
+		videoEl: HTMLVideoElement,
+		isLandscape = false;
 
 	export { className as class };
 
@@ -112,9 +113,7 @@
 		if (!document.fullscreenElement) {
 			await playerEl
 				.requestFullscreen()
-				.then(() => {
-					window.screen.orientation.lock('landscape');
-				})
+				.then(() => screen.orientation.lock('landscape'))
 				.catch((error) => {
 					console.error(
 						`Error attempting to enable fullscreen mode: ${error.message} (${error.name})`
@@ -216,7 +215,7 @@
 
 	const handleMouseMove = (event: Event) => {
 		const query = window.matchMedia('(min-width: 540px)');
-		if (query.matches) handleIdle(event);
+		if (query.matches || !isLandscape) handleIdle(event);
 	};
 
 	const handleMouseEnter = () => ($isShowControls = true);
@@ -358,12 +357,16 @@
 
 	const handleVideoClicked = (event: Event) => {
 		const query = window.matchMedia('(min-width: 540px)');
-		if (query.matches) {
+		if (query.matches || !isLandscape) {
 			togglePlay();
 		} else {
 			$isShowControls = !$isShowControls;
 			handleIdle(event);
 		}
+	};
+
+	const handleOrientation = () => {
+		isLandscape = screen.orientation.type.startsWith('landscape');
 	};
 </script>
 
@@ -372,6 +375,7 @@
 	on:mousemove={handleMouseMove}
 	on:online={updateOnlineStatus}
 	on:offline={updateOnlineStatus}
+	on:orientationchange={handleOrientation}
 />
 
 <div
@@ -422,7 +426,7 @@
 	{#if $isShowControls && $isLoaded}
 		<div class="vedash__controls text-white">
 			<MediaQuery query="(max-width: 540px)" let:matches>
-				{#if matches}
+				{#if matches || isLandscape}
 					<button
 						on:click={() => ($isOpenPlaybackSettings = true)}
 						type="button"
@@ -511,7 +515,7 @@
 				class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent text-white"
 			>
 				<MediaQuery query="(max-width: 540px)" let:matches>
-					{#if matches}
+					{#if matches || isLandscape}
 						<div class="flex items-center justify-between">
 							<p class="text-sm">
 								{formatDuration($currentTime)} / {formatDuration($totalDuration)}
@@ -550,7 +554,7 @@
 					/>
 				</div>
 				<MediaQuery query="(min-width: 540px)" let:matches>
-					{#if matches}
+					{#if matches && !isLandscape}
 						<div class="flex items-center justify-between text-white mt-2">
 							<div class="flex items-center gap-3">
 								<div class="flex items-center gap-2.5">
