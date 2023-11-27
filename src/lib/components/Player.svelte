@@ -369,7 +369,7 @@
 		if (query.matches && !isLandscape) {
 			togglePlay();
 		} else {
-			$isShowControls = !$isShowControls;
+			$isShowControls = $isShowControls ? false : true;
 		}
 	};
 
