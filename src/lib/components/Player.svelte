@@ -214,7 +214,7 @@
 	};
 
 	const handleMouseMove = (event: Event) => {
-		const query = window.matchMedia('(min-width: 540px)');
+		const query = window.matchMedia('(min-width: 1024px)');
 		if (query.matches && !isLandscape) handleIdle(event);
 	};
 
@@ -356,7 +356,7 @@
 	};
 
 	const handleVideoClicked = (event: Event) => {
-		const query = window.matchMedia('(min-width: 540px)');
+		const query = window.matchMedia('(min-width: 1024px)');
 		if (query.matches && !isLandscape) {
 			togglePlay();
 		} else {
@@ -365,9 +365,7 @@
 		}
 	};
 
-	const handleOrientation = () => {
-		isLandscape = screen.orientation.type.startsWith('landscape');
-	};
+	const handleOrientation = () => (isLandscape = screen.orientation.type.startsWith('landscape'));
 </script>
 
 <svelte:window
@@ -425,7 +423,7 @@
 	{/if}
 	{#if $isShowControls && $isLoaded}
 		<div class="vedash__controls text-white">
-			<MediaQuery query="(max-width: 540px)" let:matches>
+			<MediaQuery query="(max-width: 1024px)" let:matches>
 				{#if matches || isLandscape}
 					<button
 						on:click={() => ($isOpenPlaybackSettings = true)}
@@ -514,7 +512,7 @@
 			<div
 				class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent text-white"
 			>
-				<MediaQuery query="(max-width: 540px)" let:matches>
+				<MediaQuery query="(max-width: 1024px)" let:matches>
 					{#if matches || isLandscape}
 						<div class="flex items-center justify-between">
 							<p class="text-sm">
@@ -538,7 +536,7 @@
 				<div class="relative">
 					<div
 						style="width: {$bufferedWidth}%;"
-						class="vedash__buffered bg-gray-400 h-[3px] absolute left-0 top-[60%] pointer-events-none rounded-[12px]"
+						class="vedash__buffered bg-gray-400 h-[3px] absolute left-0 top-[61%] pointer-events-none rounded-[12px]"
 					/>
 					<Slider
 						on:input={updateCurrentTime}
@@ -553,7 +551,7 @@
 						bind:value={$currentTime}
 					/>
 				</div>
-				<MediaQuery query="(min-width: 540px)" let:matches>
+				<MediaQuery query="(min-width: 1024px)" let:matches>
 					{#if matches && !isLandscape}
 						<div class="flex items-center justify-between text-white mt-2">
 							<div class="flex items-center gap-3">
