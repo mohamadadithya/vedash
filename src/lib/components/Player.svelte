@@ -24,6 +24,7 @@
 	import MediaQuery from 'svelte-media-queries';
 	import Select from './Select.svelte';
 	import type { ItemObject } from '$lib/types.js';
+	import Toggle from './Toggle.svelte';
 
 	setStates();
 	const {
@@ -188,7 +189,7 @@
 
 	const handleIdle = (event: Event) => {
 		const targetEl = event.target as HTMLElement;
-		const controlsEl = targetEl.closest('.vedash__controls');
+		const controlsEl = targetEl?.closest('.vedash__controls');
 
 		clearTimeout(idleTimer);
 
@@ -432,6 +433,13 @@
 						>
 							<div class="bg-white p-5 w-full max-w-xs rounded-xl shadow-xl relative">
 								<p class="text-sm uppercase font-semibold mb-4">Playback Settings</p>
+								<button
+									on:click={() => (isOpenPlaybackSettings = false)}
+									type="button"
+									class="absolute top-5 right-5"
+								>
+									<X />
+								</button>
 								<div class="grid gap-4">
 									{#if trackVariants.length > 0}
 										<Select
@@ -451,13 +459,13 @@
 										items={playbackRates}
 										bind:value={$playbackRate}
 									/>
-									<button
-										on:click={() => (isOpenPlaybackSettings = false)}
-										type="button"
-										class="absolute top-5 right-5"
-									>
-										<X />
-									</button>
+									<Toggle
+										id="loop-mode"
+										name="loop_mode"
+										label="Loop Mode"
+										on:change={toggleLoop}
+										bind:checked={$isLoopMode}
+									/>
 								</div>
 							</div>
 						</div>
