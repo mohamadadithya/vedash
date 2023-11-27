@@ -40,8 +40,8 @@
 <style lang="scss">
 	@mixin range-thumb {
 		appearance: none;
-		height: 12px;
-		width: 12px;
+		height: 0.75rem;
+		width: 0.75rem;
 		background-color: var(--primaryColor);
 		border-radius: 50%;
 		border: none;
@@ -52,7 +52,7 @@
 		appearance: none;
 		width: 100%;
 		cursor: pointer;
-		border-radius: 12px;
+		border-radius: 0.75rem;
 		height: 3px;
 		background: hsla(0, 0%, 80%, 0.4);
 
