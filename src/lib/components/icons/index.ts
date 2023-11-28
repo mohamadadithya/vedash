@@ -11,3 +11,4 @@ export { default as Settings } from '$icons/Settings.svelte';
 export { default as Volume1 } from '$icons/Volume1.svelte';
 export { default as Volume2 } from '$icons/Volume2.svelte';
 export { default as VolumeX } from '$icons/VolumeX.svelte';
+export { default as Captions } from '$icons/Captions.svelte';

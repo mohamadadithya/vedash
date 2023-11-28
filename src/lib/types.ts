@@ -3,4 +3,11 @@ interface ItemObject {
 	value: unknown;
 }
 
-export type { ItemObject };
+interface Subtitle {
+	kind?: 'subtitles' | 'captions';
+	src: string;
+	srclang: string;
+	label: string;
+}
+
+export type { ItemObject, Subtitle };

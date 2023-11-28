@@ -5,11 +5,21 @@
 <div class="grid place-items-center min-h-screen">
 	<Player
 		--primaryColor="red"
-		src="https://bitmovin-a.akamaihd.net
-		/content/MI201109210084_1
-		/mpds/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.mpd"
+		src="https://dash.akamaized.net/digitalprimates/fraunhofer/480p_video/heaac_2_0_with_video/Sintel/sintel_480p_heaac2_0.mpd"
 		disablepictureinpicture={true}
 		crossorigin="anonymous"
 		class="w-full max-w-4xl mx-auto"
+		subtitles={[
+			{
+				label: 'English',
+				srclang: 'en',
+				src: '/subtitles/sintel_en.vtt'
+			},
+			{
+				label: 'Croatia',
+				srclang: 'hr',
+				src: '/subtitles/sintel_hr.vtt'
+			}
+		]}
 	/>
 </div>

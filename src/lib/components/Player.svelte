@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CueText from './CueText.svelte';
 	import { formatDuration } from '$lib/utils.js';
 	import { setStates, getStates } from '$lib/context.js';
 	import MenuPanel from '$components/MenuPanel.svelte';
@@ -25,6 +26,10 @@
 		VolumeX
 	} from '$vedash/icons';
 	import type IdleJs from 'idle-js';
+	import type { Subtitle } from '$lib/types.js';
+	import { writable, type Writable } from 'svelte/store';
+	import Captions from '$icons/Captions.svelte';
+	import CaptionsFilled from '$icons/CaptionsFilled.svelte';
 
 	setStates();
 	const {
@@ -53,7 +58,8 @@
 		preload = 'auto',
 		disablepictureinpicture = false,
 		controlslist = '',
-		crossorigin: 'anonymous' | 'use-credentials' | '' = '';
+		crossorigin: 'anonymous' | 'use-credentials' | '' = '',
+		subtitles: Subtitle[] = [];
 
 	let playerEl: HTMLDivElement,
 		playerInstance: Player,
@@ -62,7 +68,8 @@
 		idleState = false,
 		videoEl: HTMLVideoElement,
 		isLandscape = false,
-		idleInstance: IdleJs;
+		idleInstance: IdleJs,
+		activeCueText = '';
 
 	export { className as class };
 
@@ -213,6 +220,8 @@
 
 	const handleEnded = () => {
 		$isPaused = true;
+		activeCueText = '';
+
 		dispatch('ended');
 	};
 
@@ -220,6 +229,21 @@
 
 	const addNetworkListeners = () => updateOnlineStatus();
 	const trackVariants: shaka.extern.Track[] = [];
+	const textTracks: Writable<TextTrack[]> = writable([]);
+
+	const runCaptions = (caption: TextTrack) => {
+		caption.mode = 'hidden';
+		caption.addEventListener('cuechange', (event: Event) => {
+			const cues = (event.target as TextTrack).activeCues;
+
+			if (cues && cues.length > 0) {
+				const cue = cues[0] as VTTCue;
+				activeCueText = cue.text;
+			} else {
+				activeCueText = '';
+			}
+		});
+	};
 
 	onMount(async () => {
 		const { default: IdleJs } = await import('idle-js');
@@ -282,7 +306,6 @@
 
 			try {
 				await playerInstance.load(src);
-				console.log('Player has loaded the video');
 			} catch (error) {
 				console.log(error);
 			}
@@ -345,6 +368,36 @@
 		if (playerInstance) playerInstance.destroy();
 		if (idleInstance) idleInstance.reset().stop();
 	});
+
+	const captions = subtitles.map((caption) => {
+		return {
+			label: caption.label,
+			value: caption.srclang
+		};
+	});
+
+	captions.unshift({
+		label: 'Off',
+		value: 'off'
+	});
+
+	let selectedCaption = captions[0].value,
+		isCaptionsOn = false;
+
+	const handleCaptions = (event: CustomEvent) => {
+		const value = event.detail.data;
+		selectedCaption = value;
+
+		const textTracks = videoEl.textTracks;
+		const caption = Array.from(textTracks).find((track) => track.language === selectedCaption);
+
+		if (caption) {
+			runCaptions(caption);
+			isCaptionsOn = true;
+		} else {
+			isCaptionsOn = false;
+		}
+	};
 </script>
 
 <svelte:window
@@ -363,12 +416,13 @@
 >
 	{#if !$isOnline}
 		<div
-			transition:fly={{ duration: 300, y: 50 }}
+			transition:fly={{ duration: 300, y: -50 }}
 			class="bg-white bg-opacity-90 absolute text-red-600 p-3 z-[1] rounded-br-md text-xs md:text-sm font-medium"
 		>
 			<p>Oops, you're offline.</p>
 		</div>
 	{/if}
+	<!-- svelte-ignore a11y-media-has-caption -->
 	<video
 		{preload}
 		{disablepictureinpicture}
@@ -386,8 +440,18 @@
 		on:mouseleave={handleMouseLeave}
 		on:ended={handleEnded}
 	>
-		<track kind="captions" />
+		{#each subtitles as subtitle}
+			<track
+				label={subtitle.label}
+				kind={subtitle.kind ?? 'subtitles'}
+				srclang={subtitle.srclang}
+				src={subtitle.src}
+			/>
+		{/each}
 	</video>
+	{#if activeCueText && isCaptionsOn}
+		<CueText bind:activeCueText bind:isShowControls={$isShowControls} />
+	{/if}
 	{#if $isSeeking || ($isShowControls && $isLoaded) || $isBuffering}
 		<div
 			transition:fade={{ duration: 200 }}
@@ -448,6 +512,16 @@
 										items={playbackSpeeds}
 										bind:value={$playbackSpeed}
 									/>
+									{#if subtitles.length > 0}
+										<Select
+											on:change={handleCaptions}
+											label="Captions"
+											id="captions"
+											name="captions"
+											items={captions}
+											bind:value={selectedCaption}
+										/>
+									{/if}
 									<Toggle
 										id="loop-mode"
 										name="loop_mode"
@@ -469,7 +543,8 @@
 						on:click={() => dispatch('prev')}
 						type="button"
 						aria-label="Backward"
-						title="Previous"><FastForward class="-scale-x-[1] w-12 h-12 md:w-14 md:h-14" /></button
+						title="Previous"
+						><FastForward class="-scale-x-[1] w-10 h-10 xs:w-12 xs:h-12 md:w-14 md:h-14" /></button
 					>
 					<button
 						on:click={togglePlay}
@@ -478,13 +553,13 @@
 						title={$isPaused ? 'Play' : 'Pause'}
 					>
 						{#if $isPaused}
-							<Play class="w-12 h-12 md:w-14 md:h-14" />
+							<Play class="w-10 h-10 xs:w-12 xs:h-12 md:w-14 md:h-14" />
 						{:else}
-							<Pause class="w-12 h-12 md:w-14 md:h-14" />
+							<Pause class="w-10 h-10 xs:w-12 xs:h-12 md:w-14 md:h-14" />
 						{/if}
 					</button>
 					<button on:click={() => dispatch('next')} type="button" aria-label="Forward" title="Next"
-						><FastForward class="w-12 h-12 md:w-14 md:h-14" /></button
+						><FastForward class="w-10 h-10 xs:w-12 xs:h-12 md:w-14 md:h-14" /></button
 					>
 				</div>
 			{/if}
@@ -584,6 +659,22 @@
 								>
 									<span slot="trigger-button" class="font-semibold text-base md:text-lg">1x</span>
 								</MenuPanel>
+								{#if subtitles.length > 0}
+									<MenuPanel
+										bind:value={selectedCaption}
+										on:change={handleCaptions}
+										title="Captions"
+										items={captions}
+									>
+										<div slot="trigger-button">
+											{#if isCaptionsOn}
+												<CaptionsFilled class="w-5 h-5 md:w-6 md:h-6" />
+											{:else}
+												<Captions class="w-5 h-5 md:w-6 md:h-6" />
+											{/if}
+										</div>
+									</MenuPanel>
+								{/if}
 								<MenuPanel
 									bind:value={$quality}
 									on:change={handleQuality}
