@@ -389,12 +389,10 @@
 		const videoEl = targetEl.closest('.vedash__video');
 		const controlsEl = targetEl.closest('.vedash__controls');
 
-		if (query.matches && !isLandscape) {
-			if (!videoEl && !controlsEl && !$isPaused) {
-				$isShowControls = false;
-			} else {
-				$isShowControls = true;
-			}
+		if (!videoEl && !controlsEl && !$isPaused) {
+			$isShowControls = false;
+		} else {
+			if (query.matches && !isLandscape) $isShowControls = true;
 		}
 	};
 </script>

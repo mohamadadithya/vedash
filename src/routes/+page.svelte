@@ -5,7 +5,7 @@
 <div class="grid place-items-center min-h-screen">
 	<Player
 		--primaryColor="red"
-		src="https://dash.akamaized.net/digitalprimates/fraunhofer/480p_video/heaac_2_0_with_video/Sintel/sintel_480p_heaac2_0.mpd"
+		src="/videos/somebody-to-love-hls/somebody-to-love.m3u8"
 		disablepictureinpicture={true}
 		crossorigin="anonymous"
 		class="w-full max-w-4xl mx-auto"
