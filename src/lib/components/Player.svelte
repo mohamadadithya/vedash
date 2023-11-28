@@ -192,17 +192,6 @@
 		}
 	};
 
-	const handleMouseMove = (event: Event) => {
-		const targetEl = event.target as HTMLElement;
-		const controlsEl = targetEl?.closest('.vedash__controls');
-		const videoEl = targetEl?.closest('.vedash__video');
-		const query = window.matchMedia('(min-width: 1024px)');
-
-		// if (!query.matches && isLandscape) {
-		// 	if (!controlsEl && !videoEl) $isShowControls = false;
-		// }
-	};
-
 	const handleMouseLeave = () => {
 		if ($isPaused) {
 			$isShowControls = true;
@@ -360,7 +349,6 @@
 
 <svelte:window
 	on:keydown={setShortcuts}
-	on:mousemove={handleMouseMove}
 	on:online={updateOnlineStatus}
 	on:offline={updateOnlineStatus}
 	on:orientationchange={handleOrientation}
