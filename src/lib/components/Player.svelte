@@ -383,6 +383,12 @@
 			isCaptionsOn = false;
 		}
 	};
+
+	const handleMouseLeave = () => {
+		const query = window.matchMedia('(min-width: 1024px)');
+
+		if (query.matches && !isLandscape) $isShowControls = $isPaused;
+	};
 </script>
 
 <svelte:window
@@ -422,7 +428,7 @@
 		bind:volume={$volume}
 		bind:muted={$isMuted}
 		on:mouseenter={() => ($isShowControls = true)}
-		on:mouseleave={() => ($isShowControls = $isPaused)}
+		on:mouseleave={handleMouseLeave}
 		on:ended={handleEnded}
 	>
 		{#each subtitles as subtitle}
