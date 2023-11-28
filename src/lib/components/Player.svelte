@@ -439,7 +439,7 @@
 		{#each subtitles as subtitle}
 			<track
 				label={subtitle.label}
-				kind={subtitle.kind ?? 'subtitles'}
+				kind={subtitle.kind ?? 'captions'}
 				srclang={subtitle.srclang}
 				src={subtitle.src}
 			/>
