@@ -296,7 +296,7 @@
 
 		if ('serviceWorker' in navigator) {
 			try {
-				await navigator.serviceWorker.register('/src/lib/service-worker.ts');
+				await navigator.serviceWorker.register('/service-worker.ts');
 				console.log('Service Worker registered successfully');
 			} catch (error) {
 				console.error(`Error registering service worker`);
