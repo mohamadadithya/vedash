@@ -9,17 +9,5 @@
 		disablepictureinpicture={true}
 		crossorigin="anonymous"
 		class="w-full max-w-4xl mx-auto"
-		subtitles={[
-			{
-				label: 'English',
-				srclang: 'en',
-				src: '/subtitles/sintel_en.vtt'
-			},
-			{
-				label: 'Croatia',
-				srclang: 'hr',
-				src: '/subtitles/sintel_hr.vtt'
-			}
-		]}
 	/>
 </div>

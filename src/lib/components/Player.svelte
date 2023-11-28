@@ -27,7 +27,6 @@
 	} from '$vedash/icons';
 	import type IdleJs from 'idle-js';
 	import type { Subtitle } from '$lib/types.js';
-	import { writable, type Writable } from 'svelte/store';
 	import Captions from '$icons/Captions.svelte';
 	import CaptionsFilled from '$icons/CaptionsFilled.svelte';
 
@@ -384,9 +383,19 @@
 		}
 	};
 
-	const handleMouseLeave = () => {
+	const handleMousemove = (event: Event) => {
 		const query = window.matchMedia('(min-width: 1024px)');
-		if (query.matches && !isLandscape) $isShowControls = $isPaused;
+		const targetEl = event.target as HTMLElement;
+		const videoEl = targetEl.closest('.vedash__video');
+		const controlsEl = targetEl.closest('.vedash__controls');
+
+		if (query.matches && !isLandscape) {
+			if (!videoEl && !controlsEl && !$isPaused) {
+				$isShowControls = false;
+			} else {
+				$isShowControls = true;
+			}
+		}
 	};
 </script>
 
@@ -395,6 +404,7 @@
 	on:online={updateOnlineStatus}
 	on:offline={updateOnlineStatus}
 	on:orientationchange={handleOrientation}
+	on:mousemove={handleMousemove}
 />
 
 <div
@@ -426,8 +436,6 @@
 		bind:playbackRate={$playbackSpeed}
 		bind:volume={$volume}
 		bind:muted={$isMuted}
-		on:mouseenter={() => ($isShowControls = true)}
-		on:mouseleave={handleMouseLeave}
 		on:ended={handleEnded}
 	>
 		{#each subtitles as subtitle}
