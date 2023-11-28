@@ -58,7 +58,8 @@
 		disablepictureinpicture = false,
 		controlslist = '',
 		crossorigin: 'anonymous' | 'use-credentials' | '' = '',
-		subtitles: Subtitle[] = [];
+		subtitles: Subtitle[] = [],
+		configuration: object;
 
 	let playerEl: HTMLDivElement,
 		playerInstance: Player,
@@ -264,9 +265,7 @@
 
 		const initPlayer = async () => {
 			playerInstance = new shaka.Player(videoEl);
-			playerInstance.configure({
-				abr: { defaultBandwidthEstimate: 10000000 }
-			});
+			playerInstance.configure(configuration);
 
 			playerInstance.addEventListener('trackschanged', () => {
 				playerInstance.getVariantTracks().forEach((track) => {
