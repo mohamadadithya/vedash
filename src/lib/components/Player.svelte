@@ -238,7 +238,7 @@
 
 		idleInstance = new IdleJs({
 			idle: 3000,
-			events: ['mousemove', 'keydown', 'touchstart', 'touchend', 'mousedown', 'click'],
+			events: ['mousemove', 'mousedown', 'keydown', 'touchstart', 'touchend', 'click'],
 			onIdle: () => {
 				if ($isPaused || $isOpenPlaybackSettings) {
 					idleInstance.reset().stop();
@@ -268,9 +268,7 @@
 		const initPlayer = async () => {
 			playerInstance = new shaka.Player(videoEl);
 			playerInstance.configure({
-				abr: {
-					defaultBandwidthEstimate: 10000000
-				}
+				abr: { defaultBandwidthEstimate: 10000000 }
 			});
 
 			playerInstance.addEventListener('trackschanged', () => {
@@ -317,11 +315,6 @@
 		$isLoaded = true;
 	});
 
-	onDestroy(() => {
-		if (playerInstance) playerInstance.destroy();
-		if (idleInstance) idleInstance.reset().stop();
-	});
-
 	const handleQuality = (event: CustomEvent) => {
 		const selectedVariantId =
 			!event.detail.data && typeof event.detail.data !== 'number' ? null : +event.detail.data;
@@ -350,23 +343,22 @@
 	const handleVideoClicked = () => {
 		const query = window.matchMedia('(min-width: 1024px)');
 
-		if (query.matches && !isLandscape) togglePlay();
+		if (query.matches && !isLandscape) {
+			togglePlay();
+		} else {
+			$isShowControls = !$isShowControls;
+		}
 	};
 
 	const handleOrientation = () => (isLandscape = screen.orientation.type.startsWith('landscape'));
 
-	const handleClicked = (event: Event) => {
-		const query = window.matchMedia('(max-width: 1024px)');
-
-		if (query.matches) {
-			const targetEl = event.target as HTMLElement;
-			$isShowControls = !targetEl.contains(playerEl);
-		}
-	};
+	onDestroy(() => {
+		if (playerInstance) playerInstance.destroy();
+		if (idleInstance) idleInstance.reset().stop();
+	});
 </script>
 
 <svelte:window
-	on:click={handleClicked}
 	on:keydown={setShortcuts}
 	on:mousemove={handleMouseMove}
 	on:online={updateOnlineStatus}
@@ -442,7 +434,10 @@
 							<div class="bg-white p-5 w-full max-w-xs rounded-xl shadow-xl relative">
 								<p class="text-sm uppercase font-semibold mb-4">Playback Settings</p>
 								<button
-									on:click={() => ($isOpenPlaybackSettings = false)}
+									on:click={() => {
+										$isOpenPlaybackSettings = false;
+										idleInstance.start();
+									}}
 									type="button"
 									class="absolute top-5 right-5"
 								>
