@@ -343,7 +343,6 @@
 		if (query.matches && !isLandscape) {
 			togglePlay();
 		} else {
-			idleInstance.start();
 			$isShowControls = !$isShowControls;
 		}
 	};
@@ -387,12 +386,7 @@
 
 	const handleMouseLeave = () => {
 		const query = window.matchMedia('(min-width: 1024px)');
-
-		if (query.matches && !isLandscape) {
-			$isShowControls = $isPaused;
-		} else {
-			idleInstance.reset().stop();
-		}
+		if (query.matches && !isLandscape) $isShowControls = $isPaused;
 	};
 </script>
 
