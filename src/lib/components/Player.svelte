@@ -294,17 +294,6 @@
 			}
 		};
 
-		if ('serviceWorker' in navigator) {
-			try {
-				await navigator.serviceWorker.register('/service-worker.ts');
-				console.log('Service Worker registered successfully');
-			} catch (error) {
-				console.error(`Error registering service worker`);
-			}
-		} else {
-			console.error(`Browser doesn't support service workers`);
-		}
-
 		initShaka();
 		await initPlayer();
 		$isLoaded = true;
