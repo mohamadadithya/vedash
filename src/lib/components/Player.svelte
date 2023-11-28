@@ -199,20 +199,6 @@
 		}
 	};
 
-	const handleMouseLeave = () => {
-		if ($isPaused) {
-			$isShowControls = true;
-		} else {
-			document.addEventListener('mousemove', (event: Event) => {
-				const targetEl = event.target as HTMLElement;
-				const controlsEl = targetEl?.closest('.vedash__controls');
-				const videoEl = targetEl?.closest('.vedash__video');
-
-				if (!controlsEl && !videoEl && !$isPaused) $isShowControls = false;
-			});
-		}
-	};
-
 	const toggleLoop = () => {
 		videoEl.loop = !videoEl.loop;
 		$isLoopMode = videoEl.loop;
@@ -229,7 +215,6 @@
 
 	const addNetworkListeners = () => updateOnlineStatus();
 	const trackVariants: shaka.extern.Track[] = [];
-	const textTracks: Writable<TextTrack[]> = writable([]);
 
 	const runCaptions = (caption: TextTrack) => {
 		caption.mode = 'hidden';
@@ -437,7 +422,7 @@
 		bind:volume={$volume}
 		bind:muted={$isMuted}
 		on:mouseenter={() => ($isShowControls = true)}
-		on:mouseleave={handleMouseLeave}
+		on:mouseleave={() => ($isShowControls = $isPaused)}
 		on:ended={handleEnded}
 	>
 		{#each subtitles as subtitle}
@@ -454,7 +439,7 @@
 	{/if}
 	{#if $isSeeking || ($isShowControls && $isLoaded) || $isBuffering}
 		<div
-			transition:fade={{ duration: 200 }}
+			transition:fade={{ duration: 150 }}
 			class="absolute w-full h-full bg-black top-0 left-0 bg-opacity-30 pointer-events-none"
 		/>
 	{/if}
@@ -464,7 +449,7 @@
 		</div>
 	{/if}
 	{#if $isShowControls && $isLoaded}
-		<div class="vedash__controls text-white">
+		<div transition:fade={{ duration: 150 }} class="vedash__controls text-white">
 			<MediaQuery query="(max-width: 1024px)" let:matches>
 				{#if matches || isLandscape}
 					<button
@@ -476,7 +461,7 @@
 					</button>
 					{#if $isOpenPlaybackSettings}
 						<div
-							transition:fade={{ duration: 200 }}
+							transition:fade={{ duration: 150 }}
 							role="dialog"
 							aria-labelledby="Playback settings"
 							aria-describedby="Custom dialog element for playback settings"
