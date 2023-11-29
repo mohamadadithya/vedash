@@ -27,5 +27,13 @@
 			}
 		}}
 		on:requestHeader={setDrmRequestHeader}
+		subtitles={[
+			{
+				label: 'English',
+				src: '/subtitles/TOS-en.vtt',
+				srclang: 'en',
+				kind: 'subtitles'
+			}
+		]}
 	/>
 </div>

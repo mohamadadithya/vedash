@@ -19,7 +19,10 @@
 <style lang="scss">
 	.vedash__captions-wrapper {
 		p {
-			text-shadow: 2px 2px #000;
+			text-shadow:
+				1px 1px 2px black,
+				0 0 1em black,
+				0 0 0.2em black;
 		}
 	}
 </style>
