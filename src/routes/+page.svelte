@@ -12,5 +12,13 @@
 		configuration={{
 			abr: { defaultBandwidthEstimate: 10000000 }
 		}}
+		subtitles={[
+			{
+				label: 'English',
+				src: 'https://dl.dropboxusercontent.com/scl/fi/2yso1urlol8b95pz8c8i3/TOS-en.vtt?rlkey=02haff5d7dl7bxq7tcgvd895i&dl=0',
+				srclang: 'en',
+				kind: 'subtitles'
+			}
+		]}
 	/>
 </div>
