@@ -20,7 +20,10 @@ const config = {
 		},
 		alias: {
 			'@components': 'src/lib/components/index.ts',
-			'@icons': 'src/lib/components/icons/index.ts'
+			'@icons': 'src/lib/components/icons/index.ts',
+			'@types': 'src/lib/types.ts',
+			'@utils': 'src/lib/utils.ts',
+			'@context': 'src/lib/context.ts'
 		}
 	}
 };

@@ -12,3 +12,4 @@ vite.config.ts.timestamp-*
 .vercel
 /static/subtitles
 /static/videos
+/src/routes/videos

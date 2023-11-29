@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { formatDuration } from '$lib/utils.js';
-	import { setStates, getStates } from '$lib/context.js';
-	import { fade, fly } from 'svelte/transition';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
+	import { afterNavigate } from '$app/navigation';
 	import shaka, { type Player } from 'shaka-player';
 	import MediaQuery from 'svelte-media-queries';
 	import { CueText, MenuPanel, Slider, Select, Toggle } from '@components';
@@ -23,8 +22,10 @@
 		Captions,
 		CaptionsFilled
 	} from '@icons';
+	import { formatDuration } from '@utils';
+	import { setStates, getStates } from '@context';
+	import type { Subtitle } from '@types';
 	import type IdleJs from 'idle-js';
-	import type { Subtitle } from '$lib/types.js';
 
 	setStates();
 	const {
@@ -116,14 +117,10 @@
 		}
 	};
 
-	const togglePlay = () => {
-		if (videoEl.paused) {
-			videoEl.play();
-		} else {
-			videoEl.pause();
-			$isShowControls = true;
-		}
+	const togglePlay = async () => {
+		(await videoEl.paused) ? videoEl.play() : videoEl.pause();
 
+		if (videoEl.paused) $isShowControls = true;
 		$isPaused = videoEl.paused;
 	};
 
@@ -221,8 +218,8 @@
 	};
 
 	const updateOnlineStatus = () => ($isOnline = window.navigator.onLine);
-
 	const addNetworkListeners = () => updateOnlineStatus();
+
 	const trackVariants: shaka.extern.Track[] = [];
 
 	const runCaptions = (caption: TextTrack) => {
@@ -239,78 +236,48 @@
 		});
 	};
 
-	onMount(async () => {
-		const { default: IdleJs } = await import('idle-js');
-		$isOnline = window.navigator.onLine;
+	const initShaka = () => {
+		shaka.polyfill.installAll();
 
-		idleInstance = new IdleJs({
-			idle: 3000,
-			events: ['mousemove', 'mousedown', 'keydown', 'touchstart', 'touchend', 'click'],
-			onIdle: () => {
-				if ($isPaused || $isOpenPlaybackSettings) {
-					idleInstance.reset().stop();
-				} else {
-					$isShowControls = false;
-				}
-			},
-			onActive: () => {
-				const query = window.matchMedia('(min-width: 1024px)');
-				if (query.matches) $isShowControls = true;
-			}
+		if (!shaka.Player.isBrowserSupported) {
+			console.error('Browser is not supported!');
+			return;
+		}
+
+		addNetworkListeners();
+	};
+
+	const initShakaInstance = async () => {
+		playerInstance = new shaka.Player(videoEl);
+		playerInstance.configure(configuration);
+
+		playerInstance.getNetworkingEngine()?.registerRequestFilter((type, request) => {
+			dispatch('requestHeader', { type, request, shaka });
 		});
 
-		idleInstance.start();
-
-		const initShaka = () => {
-			shaka.polyfill.installAll();
-
-			if (!shaka.Player.isBrowserSupported) {
-				console.error('Browser is not supported!');
-				return;
-			}
-
-			addNetworkListeners();
-		};
-
-		const initPlayer = async () => {
-			playerInstance = new shaka.Player(videoEl);
-			playerInstance.configure(configuration);
-
-			playerInstance.getNetworkingEngine()?.registerRequestFilter((type, request) => {
-				dispatch('requestHeader', { type, request, shaka });
-			});
-
-			playerInstance.addEventListener('trackschanged', () => {
-				playerInstance.getVariantTracks().forEach((track) => {
-					trackVariants.push(track);
-					$qualities = trackVariants.map((track) => {
-						return {
-							label: `${track.height}p`,
-							value: track.id
-						};
-					});
-
-					$qualities.unshift({ label: 'Auto', value: null });
+		playerInstance.addEventListener('trackschanged', () => {
+			playerInstance.getVariantTracks().forEach((track) => {
+				trackVariants.push(track);
+				$qualities = trackVariants.map((track) => {
+					return {
+						label: `${track.height}p`,
+						value: track.id
+					};
 				});
+
+				$qualities.unshift({ label: 'Auto', value: null });
 			});
+		});
 
-			playerInstance.addEventListener('error', console.error);
-			playerInstance.addEventListener(
-				'buffering',
-				(event: any) => ($isBuffering = event.buffering)
-			);
+		playerInstance.addEventListener('error', console.error);
+		playerInstance.addEventListener('buffering', (event: any) => ($isBuffering = event.buffering));
 
-			try {
-				await playerInstance.load(src);
-			} catch (error) {
-				console.log(error);
-			}
-		};
-
-		initShaka();
-		await initPlayer();
-		$isLoaded = true;
-	});
+		try {
+			await playerInstance.load(src);
+		} catch (error) {
+			console.log(error);
+		}
+	};
 
 	const handleQuality = (event: CustomEvent) => {
 		const selectedVariantId =
@@ -347,13 +314,13 @@
 		}
 	};
 
+	const initPlayer = async () => {
+		$isLoaded = false;
+		initShaka();
+		await initShakaInstance().finally(() => ($isLoaded = true));
+	};
+
 	const handleOrientation = () => ($isLandscape = screen.orientation.type.startsWith('landscape'));
-
-	onDestroy(() => {
-		if (playerInstance) playerInstance.destroy();
-		if (idleInstance) idleInstance.reset().stop();
-	});
-
 	const handleCaptions = (event: CustomEvent) => {
 		const value = event.detail.data;
 		$selectedCaption = value;
@@ -369,11 +336,11 @@
 		}
 	};
 
-	const handleMousemove = (event: Event) => {
+	const handleMousemove = (event: MouseEvent) => {
 		const query = window.matchMedia('(min-width: 1024px)');
 		const targetEl = event.target as HTMLElement;
-		const videoEl = targetEl.closest('.vedash__video');
-		const controlsEl = targetEl.closest('.vedash__controls');
+		const videoEl = targetEl.closest('.vedash__video') as HTMLVideoElement;
+		const controlsEl = targetEl.closest('.vedash__controls') as HTMLDivElement;
 
 		if (!videoEl && !controlsEl && !$isPaused) {
 			$isShowControls = false;
@@ -381,6 +348,37 @@
 			if (query.matches && !$isLandscape) $isShowControls = true;
 		}
 	};
+
+	onMount(async () => {
+		const { default: IdleJs } = await import('idle-js');
+
+		$isOnline = window.navigator.onLine;
+
+		idleInstance = new IdleJs({
+			idle: 3000,
+			events: ['mousemove', 'mousedown', 'keydown', 'touchstart', 'touchend', 'click'],
+			onIdle: () => {
+				if ($isPaused || $isOpenPlaybackSettings) {
+					idleInstance.reset().stop();
+				} else {
+					$isShowControls = false;
+				}
+			},
+			onActive: () => {
+				const query = window.matchMedia('(min-width: 1024px)');
+				if (query.matches) $isShowControls = true;
+			}
+		});
+
+		idleInstance.start();
+	});
+
+	onDestroy(() => {
+		if (playerInstance) playerInstance.destroy();
+		if (idleInstance) idleInstance.reset().stop();
+	});
+
+	afterNavigate(initPlayer);
 </script>
 
 <svelte:window
