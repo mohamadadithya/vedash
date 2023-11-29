@@ -12,6 +12,7 @@ import Volume1 from './Volume1.svelte';
 import Volume2 from './Volume2.svelte';
 import VolumeX from './VolumeX.svelte';
 import Captions from './Captions.svelte';
+import CaptionsFilled from './CaptionsFilled.svelte';
 
 export {
 	CheckCircle,
@@ -27,5 +28,6 @@ export {
 	Volume1,
 	Volume2,
 	VolumeX,
-	Captions
+	Captions,
+	CaptionsFilled
 };

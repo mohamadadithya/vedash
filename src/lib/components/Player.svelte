@@ -1,15 +1,11 @@
 <script lang="ts">
-	import CueText from './CueText.svelte';
 	import { formatDuration } from '$lib/utils.js';
 	import { setStates, getStates } from '$lib/context.js';
-	import MenuPanel from '$components/MenuPanel.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import shaka, { type Player } from 'shaka-player';
-	import Slider from '$components/Slider.svelte';
 	import MediaQuery from 'svelte-media-queries';
-	import Select from '$components/Select.svelte';
-	import Toggle from '$components/Toggle.svelte';
+	import { CueText, MenuPanel, Slider, Select, Toggle } from '@components';
 	import {
 		CheckCircle,
 		Close,
@@ -23,12 +19,12 @@
 		Settings,
 		Volume1,
 		Volume2,
-		VolumeX
-	} from '$vedash/icons';
+		VolumeX,
+		Captions,
+		CaptionsFilled
+	} from '@icons';
 	import type IdleJs from 'idle-js';
 	import type { Subtitle } from '$lib/types.js';
-	import Captions from '$icons/Captions.svelte';
-	import CaptionsFilled from '$icons/CaptionsFilled.svelte';
 
 	setStates();
 	const {
@@ -48,7 +44,11 @@
 		isBuffering,
 		bufferedWidth,
 		isOpenPlaybackSettings,
-		qualities
+		qualities,
+		isCaptionsOn,
+		activeCueText,
+		isLandscape,
+		selectedCaption
 	} = getStates();
 
 	const dispatch = createEventDispatcher();
@@ -61,15 +61,24 @@
 		subtitles: Subtitle[] = [],
 		configuration: object;
 
+	const captions = subtitles.map((caption) => {
+		return {
+			label: caption.label,
+			value: caption.srclang
+		};
+	});
+
+	captions.unshift({ label: 'Off', value: 'off' });
+
+	$selectedCaption = captions[0].value;
+
 	let playerEl: HTMLDivElement,
 		playerInstance: Player,
 		className = '',
 		idleTimer: ReturnType<typeof setTimeout>,
 		idleState = false,
 		videoEl: HTMLVideoElement,
-		isLandscape = false,
-		idleInstance: IdleJs,
-		activeCueText = '';
+		idleInstance: IdleJs;
 
 	export { className as class };
 
@@ -206,7 +215,7 @@
 
 	const handleEnded = () => {
 		$isPaused = true;
-		activeCueText = '';
+		$activeCueText = '';
 
 		dispatch('ended');
 	};
@@ -223,9 +232,9 @@
 
 			if (cues && cues.length > 0) {
 				const cue = cues[0] as VTTCue;
-				activeCueText = cue.text;
+				$activeCueText = cue.text;
 			} else {
-				activeCueText = '';
+				$activeCueText = '';
 			}
 		});
 	};
@@ -335,47 +344,32 @@
 	const handleVideoClicked = () => {
 		const query = window.matchMedia('(min-width: 1024px)');
 
-		if (query.matches && !isLandscape) {
+		if (query.matches && !$isLandscape) {
 			togglePlay();
 		} else {
 			$isShowControls = !$isShowControls;
 		}
 	};
 
-	const handleOrientation = () => (isLandscape = screen.orientation.type.startsWith('landscape'));
+	const handleOrientation = () => ($isLandscape = screen.orientation.type.startsWith('landscape'));
 
 	onDestroy(() => {
 		if (playerInstance) playerInstance.destroy();
 		if (idleInstance) idleInstance.reset().stop();
 	});
 
-	const captions = subtitles.map((caption) => {
-		return {
-			label: caption.label,
-			value: caption.srclang
-		};
-	});
-
-	captions.unshift({
-		label: 'Off',
-		value: 'off'
-	});
-
-	let selectedCaption = captions[0].value,
-		isCaptionsOn = false;
-
 	const handleCaptions = (event: CustomEvent) => {
 		const value = event.detail.data;
-		selectedCaption = value;
+		$selectedCaption = value;
 
 		const textTracks = videoEl.textTracks;
-		const caption = Array.from(textTracks).find((track) => track.language === selectedCaption);
+		const caption = Array.from(textTracks).find((track) => track.language === $selectedCaption);
 
 		if (caption) {
 			runCaptions(caption);
-			isCaptionsOn = true;
+			$isCaptionsOn = true;
 		} else {
-			isCaptionsOn = false;
+			$isCaptionsOn = false;
 		}
 	};
 
@@ -388,7 +382,7 @@
 		if (!videoEl && !controlsEl && !$isPaused) {
 			$isShowControls = false;
 		} else {
-			if (query.matches && !isLandscape) $isShowControls = true;
+			if (query.matches && !$isLandscape) $isShowControls = true;
 		}
 	};
 </script>
@@ -441,8 +435,8 @@
 			/>
 		{/each}
 	</video>
-	{#if activeCueText && isCaptionsOn}
-		<CueText bind:activeCueText bind:isShowControls={$isShowControls} />
+	{#if $activeCueText && $isCaptionsOn}
+		<CueText bind:activeCueText={$activeCueText} bind:isShowControls={$isShowControls} />
 	{/if}
 	{#if $isSeeking || ($isShowControls && $isLoaded) || $isBuffering}
 		<div
@@ -458,7 +452,7 @@
 	{#if $isShowControls && $isLoaded}
 		<div transition:fade={{ duration: 150 }} class="vedash__controls text-white">
 			<MediaQuery query="(max-width: 1024px)" let:matches>
-				{#if matches || isLandscape}
+				{#if matches || $isLandscape}
 					<button
 						on:click={() => ($isOpenPlaybackSettings = true)}
 						type="button"
@@ -511,7 +505,7 @@
 											id="captions"
 											name="captions"
 											items={captions}
-											bind:value={selectedCaption}
+											bind:value={$selectedCaption}
 										/>
 									{/if}
 									<Toggle
@@ -559,7 +553,7 @@
 				class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent text-white"
 			>
 				<MediaQuery query="(max-width: 1024px)" let:matches>
-					{#if matches || isLandscape}
+					{#if matches || $isLandscape}
 						<div class="flex items-center justify-between">
 							<p class="text-sm">
 								{formatDuration($currentTime)} / {formatDuration($totalDuration)}
@@ -598,7 +592,7 @@
 					/>
 				</div>
 				<MediaQuery query="(min-width: 1024px)" let:matches>
-					{#if matches && !isLandscape}
+					{#if matches && !$isLandscape}
 						<div class="flex items-center justify-between text-white mt-2">
 							<div class="flex items-center gap-3">
 								<div class="flex items-center gap-2.5">
@@ -653,13 +647,13 @@
 								</MenuPanel>
 								{#if subtitles.length > 0}
 									<MenuPanel
-										bind:value={selectedCaption}
+										bind:value={$selectedCaption}
 										on:change={handleCaptions}
 										title="Captions"
 										items={captions}
 									>
 										<div slot="trigger-button">
-											{#if isCaptionsOn}
+											{#if $isCaptionsOn}
 												<CaptionsFilled class="w-5 h-5 md:w-6 md:h-6" />
 											{:else}
 												<Captions class="w-5 h-5 md:w-6 md:h-6" />

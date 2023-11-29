@@ -24,7 +24,11 @@ const setStates = () => {
 		isBuffering: Writable<boolean> = writable(false),
 		bufferedWidth: Tweened<number> = tweened(0),
 		isOpenPlaybackSettings: Writable<boolean> = writable(false),
-		qualities: Writable<ItemObject[]> = writable([]);
+		qualities: Writable<ItemObject[]> = writable([]),
+		isCaptionsOn: Writable<boolean> = writable(false),
+		activeCueText: Writable<string> = writable(''),
+		isLandscape: Writable<boolean> = writable(false),
+		selectedCaption: Writable<string> = writable('');
 
 	setContext('currentTime', currentTime);
 	setContext('volume', volume);
@@ -43,6 +47,10 @@ const setStates = () => {
 	setContext('bufferedWidth', bufferedWidth),
 		setContext('isOpenPlaybackSettings', isOpenPlaybackSettings),
 		setContext('qualities', qualities);
+	setContext('isCaptionsOn', isCaptionsOn);
+	setContext('activeCueText', activeCueText);
+	setContext('isLandscape', isLandscape);
+	setContext('selectedCaption', selectedCaption);
 };
 
 const getStates = () => {
@@ -63,7 +71,11 @@ const getStates = () => {
 		isBuffering: getContext<Writable<boolean>>('isBuffering'),
 		bufferedWidth: getContext<Tweened<number>>('bufferedWidth'),
 		isOpenPlaybackSettings: getContext<Writable<boolean>>('isOpenPlaybackSettings'),
-		qualities: getContext<Writable<ItemObject[]>>('qualities')
+		qualities: getContext<Writable<ItemObject[]>>('qualities'),
+		isCaptionsOn: getContext<Writable<boolean>>('isCaptionsOn'),
+		activeCueText: getContext<Writable<string>>('activeCueText'),
+		isLandscape: getContext<Writable<boolean>>('isLandscape'),
+		selectedCaption: getContext<Writable<string>>('selectedCaption')
 	};
 };
 
