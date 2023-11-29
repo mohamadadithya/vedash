@@ -12,8 +12,8 @@
 		configuration={{
 			abr: { defaultBandwidthEstimate: 10000000 },
 			drm: {
-				clearKeys: {
-					nrQFDeRLSAKTLifXUIPiZg: 'FmY0xnWCPCNaSpRG-tUuTQ'
+				servers: {
+					'com.widevine.alpha': 'https://drm-widevine-licensing.axtest.net/AcquireLicense'
 				}
 			}
 		}}
