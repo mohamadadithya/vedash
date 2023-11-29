@@ -277,11 +277,7 @@
 			playerInstance.configure(configuration);
 
 			playerInstance.getNetworkingEngine()?.registerRequestFilter((type, request) => {
-				dispatch('requestHeader', {
-					type,
-					request,
-					shaka
-				});
+				dispatch('requestHeader', { type, request, shaka });
 			});
 
 			playerInstance.addEventListener('trackschanged', () => {
