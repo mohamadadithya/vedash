@@ -110,12 +110,12 @@
 	const togglePlay = () => {
 		if (videoEl.paused) {
 			videoEl.play();
-			$isPaused = false;
 		} else {
 			videoEl.pause();
-			$isPaused = true;
 			$isShowControls = true;
 		}
+
+		$isPaused = videoEl.paused;
 	};
 
 	const toggleFullscreen = async () => {
@@ -268,8 +268,11 @@
 			playerInstance.configure(configuration);
 
 			playerInstance.getNetworkingEngine()?.registerRequestFilter((type, request) => {
-				request.headers['X-AxDRM-Message'] =
-					'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2ZXJzaW9uIjoxLCJjb21fa2V5X2lkIjoiYjMzNjRlYjUtNTFmNi00YWUzLThjOTgtMzNjZWQ1ZTMxYzc4IiwibWVzc2FnZSI6eyJ0eXBlIjoiZW50aXRsZW1lbnRfbWVzc2FnZSIsImtleXMiOlt7ImlkIjoiOWViNDA1MGQtZTQ0Yi00ODAyLTkzMmUtMjdkNzUwODNlMjY2IiwiZW5jcnlwdGVkX2tleSI6ImxLM09qSExZVzI0Y3Iya3RSNzRmbnc9PSJ9XX19.4lWwW46k-oWcah8oN18LPj5OLS5ZU-_AQv7fe0JhNjA';
+				dispatch('requestHeader', {
+					type,
+					request,
+					shaka
+				});
 			});
 
 			playerInstance.addEventListener('trackschanged', () => {
