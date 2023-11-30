@@ -10,7 +10,7 @@
 		Close,
 		Play,
 		Pause,
-		FastForward,
+		Next,
 		Fullscreen,
 		Minimize,
 		Loop,
@@ -522,7 +522,7 @@
 						type="button"
 						aria-label="Backward"
 						title="Previous"
-						><FastForward class="-scale-x-[1] w-10 h-10 xs:w-12 xs:h-12 md:w-14 md:h-14" /></button
+						><Next class="-scale-x-[1] w-10 h-10 xs:w-12 xs:h-12 md:w-14 md:h-14" /></button
 					>
 					<button
 						on:click={togglePlay}
@@ -537,7 +537,7 @@
 						{/if}
 					</button>
 					<button on:click={() => dispatch('next')} type="button" aria-label="Forward" title="Next"
-						><FastForward class="w-10 h-10 xs:w-12 xs:h-12 md:w-14 md:h-14" /></button
+						><Next class="w-10 h-10 xs:w-12 xs:h-12 md:w-14 md:h-14" /></button
 					>
 				</div>
 			{/if}

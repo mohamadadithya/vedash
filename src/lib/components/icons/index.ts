@@ -1,6 +1,6 @@
 import CheckCircle from './CheckCircle.svelte';
 import Close from './Close.svelte';
-import FastForward from './FastForward.svelte';
+import Next from './Next.svelte';
 import Fullscreen from './Fullscreen.svelte';
 import Loader from './Loader.svelte';
 import Loop from './Loop.svelte';
@@ -17,7 +17,7 @@ import CaptionsFilled from './CaptionsFilled.svelte';
 export {
 	CheckCircle,
 	Close,
-	FastForward,
+	Next,
 	Fullscreen,
 	Loader,
 	Loop,
