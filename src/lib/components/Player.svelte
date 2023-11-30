@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { afterNavigate } from '$app/navigation';
 	import shaka, { type Player } from 'shaka-player';
 	import MediaQuery from 'svelte-media-queries';
 	import { CueText, MenuPanel, Slider, Select, Toggle } from '@components';
@@ -48,7 +47,8 @@
 		isCaptionsOn,
 		activeCueText,
 		isLandscape,
-		selectedCaption
+		selectedCaption,
+		isLoaded
 	} = getStates();
 
 	const dispatch = createEventDispatcher();
@@ -315,7 +315,7 @@
 
 	const initPlayer = async () => {
 		initShaka();
-		await initShakaInstance();
+		await initShakaInstance().finally(() => ($isLoaded = true));
 	};
 
 	const handleOrientation = () => ($isLandscape = screen.orientation.type.startsWith('landscape'));
@@ -369,14 +369,13 @@
 		});
 
 		idleInstance.start();
+		initPlayer();
 	});
 
 	onDestroy(() => {
 		if (playerInstance) playerInstance.destroy();
 		if (idleInstance) idleInstance.reset().stop();
 	});
-
-	afterNavigate(initPlayer);
 </script>
 
 <svelte:window
@@ -430,7 +429,7 @@
 	{#if $activeCueText && $isCaptionsOn}
 		<CueText bind:activeCueText={$activeCueText} bind:isShowControls={$isShowControls} />
 	{/if}
-	{#if $isSeeking || $isShowControls || $isBuffering}
+	{#if $isSeeking || ($isShowControls && $isLoaded) || $isBuffering}
 		<div
 			transition:fade={{ duration: 150 }}
 			class="absolute w-full h-full bg-black top-0 left-0 bg-opacity-30 pointer-events-none"
@@ -441,7 +440,7 @@
 			<Loader class="w-12 h-12 md:w-14 md:h-14 text-white" />
 		</div>
 	{/if}
-	{#if $isShowControls}
+	{#if $isShowControls && $isLoaded}
 		<div transition:fade={{ duration: 150 }} class="vedash__controls text-white">
 			<MediaQuery query="(max-width: 1024px)" let:matches>
 				{#if matches || $isLandscape}
@@ -586,9 +585,9 @@
 				<MediaQuery query="(min-width: 1024px)" let:matches>
 					{#if matches && !$isLandscape}
 						<div class="flex items-center justify-between text-white mt-2">
-							<div class="flex items-center gap-3">
-								<div class="flex items-center gap-2.5">
-									<button type="button" on:click={toggleMute} title="Mute">
+							<div class="flex items-center">
+								<div class="flex items-center mr-3">
+									<button class="mr-2.5" type="button" on:click={toggleMute} title="Mute">
 										{#if $isMuted || $volume === 0}
 											<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
 										{:else if $volume > 0.5}
