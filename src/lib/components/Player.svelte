@@ -39,7 +39,6 @@
 		playbackSpeed,
 		isMuted,
 		isLoopMode,
-		isLoaded,
 		quality,
 		isOnline,
 		isBuffering,
@@ -315,9 +314,8 @@
 	};
 
 	const initPlayer = async () => {
-		$isLoaded = false;
 		initShaka();
-		await initShakaInstance().finally(() => ($isLoaded = true));
+		await initShakaInstance();
 	};
 
 	const handleOrientation = () => ($isLandscape = screen.orientation.type.startsWith('landscape'));
@@ -432,7 +430,7 @@
 	{#if $activeCueText && $isCaptionsOn}
 		<CueText bind:activeCueText={$activeCueText} bind:isShowControls={$isShowControls} />
 	{/if}
-	{#if $isSeeking || ($isShowControls && $isLoaded) || $isBuffering}
+	{#if $isSeeking || $isShowControls || $isBuffering}
 		<div
 			transition:fade={{ duration: 150 }}
 			class="absolute w-full h-full bg-black top-0 left-0 bg-opacity-30 pointer-events-none"
@@ -443,7 +441,7 @@
 			<Loader class="w-12 h-12 md:w-14 md:h-14 text-white" />
 		</div>
 	{/if}
-	{#if $isShowControls && $isLoaded}
+	{#if $isShowControls}
 		<div transition:fade={{ duration: 150 }} class="vedash__controls text-white">
 			<MediaQuery query="(max-width: 1024px)" let:matches>
 				{#if matches || $isLandscape}
