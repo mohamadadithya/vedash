@@ -68,13 +68,11 @@
 	});
 
 	captions.unshift({ label: 'Off', value: 'off' });
-
 	$selectedCaption = captions[0].value;
 
 	let playerEl: HTMLDivElement,
 		playerInstance: Player,
 		className = '',
-		idleTimer: ReturnType<typeof setTimeout>,
 		idleState = false,
 		videoEl: HTMLVideoElement,
 		idleInstance: IdleJs;
@@ -144,10 +142,10 @@
 		$isSeeking = false;
 	};
 
-	const playbackSpeeds = [0.5, 1, 1.5, 2].map((rate) => {
+	const playbackSpeeds = [0.5, 1, 1.5, 2].map((speed) => {
 		return {
-			label: `${rate}x`,
-			value: rate
+			label: `${speed}x`,
+			value: speed
 		};
 	});
 
@@ -466,14 +464,16 @@
 									<Close class="w-6 h-6" />
 								</button>
 								<div class="grid gap-4">
-									<Select
-										on:change={handleQuality}
-										label="Quality"
-										id="quality"
-										name="quality"
-										items={$qualities}
-										bind:value={$quality}
-									/>
+									{#if $qualities.length > 0}
+										<Select
+											on:change={handleQuality}
+											label="Quality"
+											id="quality"
+											name="quality"
+											items={$qualities}
+											bind:value={$quality}
+										/>
+									{/if}
 									<Select
 										on:change={setPlaybackSpeed}
 										label="Speed"
@@ -641,16 +641,18 @@
 										</div>
 									</MenuPanel>
 								{/if}
-								<MenuPanel
-									bind:value={$quality}
-									on:change={handleQuality}
-									title="Quality"
-									items={$qualities}
-								>
-									<div slot="trigger-button">
-										<Settings class="w-5 h-5 md:w-6 md:h-6" />
-									</div>
-								</MenuPanel>
+								{#if $qualities.length > 0}
+									<MenuPanel
+										bind:value={$quality}
+										on:change={handleQuality}
+										title="Quality"
+										items={$qualities}
+									>
+										<div slot="trigger-button">
+											<Settings class="w-5 h-5 md:w-6 md:h-6" />
+										</div>
+									</MenuPanel>
+								{/if}
 								<button
 									title="Fullscreen"
 									type="button"
