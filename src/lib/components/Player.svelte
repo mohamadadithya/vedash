@@ -330,7 +330,27 @@
 	};
 
 	onMount(async () => {
+		const { default: IdleJs } = await import('idle-js');
+
 		$isOnline = window.navigator.onLine;
+
+		idleInstance = new IdleJs({
+			idle: 3000,
+			events: ['mousemove', 'mousedown', 'keydown', 'touchstart', 'touchend', 'click'],
+			onIdle: () => {
+				if ($isPaused || $isOpenPlaybackSettings) {
+					idleInstance.reset().stop();
+				} else {
+					$isShowControls = false;
+				}
+			},
+			onActive: () => {
+				const query = window.matchMedia('(min-width: 1025px)');
+				if (query.matches) $isShowControls = true;
+			}
+		});
+
+		idleInstance.start();
 		initPlayer();
 	});
 
