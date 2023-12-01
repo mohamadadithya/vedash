@@ -232,8 +232,8 @@
 	const initShaka = () => {
 		shaka.polyfill.installAll();
 
-		if (!shaka.Player.isBrowserSupported) {
-			console.error('Browser is not supported!');
+		if (!shaka.Player.isBrowserSupported()) {
+			alert('Video player: Browser is not supported!');
 			return;
 		}
 
