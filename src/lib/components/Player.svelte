@@ -334,7 +334,7 @@
 
 		idleInstance = new IdleJs({
 			idle: 3000,
-			events: ['mousemove', 'mousedown', 'keydown', 'touchstart', 'touchend', 'click'],
+			events: ['mousemove', 'keydown', 'click'],
 			onIdle: () => {
 				if ($isPaused || $isOpenPlaybackSettings) {
 					idleInstance.reset().stop();
@@ -383,6 +383,7 @@
 	on:fullscreenchange={updateFullscreenState}
 	on:contextmenu|preventDefault|stopPropagation
 	role="presentation"
+	draggable={false}
 >
 	{#if !$isOnline}
 		<div
