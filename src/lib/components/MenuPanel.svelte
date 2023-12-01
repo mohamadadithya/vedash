@@ -3,7 +3,7 @@
 	import { createFloatingActions } from 'svelte-floating-ui';
 	import { createEventDispatcher } from 'svelte';
 	import { clickOutside } from '$lib/actions/click-outside.js';
-	import type { ItemObject } from '$lib/types.js';
+	import type { ItemObject } from '@types';
 
 	export let items: ItemObject[], title: string, value: unknown;
 

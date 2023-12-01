@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import type { ItemObject } from '$lib/types.js';
+	import type { ItemObject } from '@types';
 
 	export let items: ItemObject[] = [],
 		id = '',

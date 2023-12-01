@@ -41,7 +41,6 @@
 		quality,
 		isOnline,
 		isBuffering,
-		bufferedWidth,
 		isOpenPlaybackSettings,
 		qualities,
 		isCaptionsOn,
@@ -197,11 +196,6 @@
 	const setCurrentTime = (event: Event) => {
 		const videoEl = event.target as HTMLVideoElement;
 		$currentTime = videoEl.currentTime;
-
-		if (videoEl.buffered.length > 0 && $totalDuration) {
-			const width = (100 * videoEl.buffered.end(0)) / $totalDuration;
-			$bufferedWidth = width;
-		}
 	};
 
 	const toggleLoop = () => {
@@ -565,10 +559,6 @@
 					{/if}
 				</MediaQuery>
 				<div class="relative">
-					<div
-						style="width: {$bufferedWidth}%;"
-						class="vedash__buffered bg-gray-400 h-[3px] absolute left-0 top-[61%] pointer-events-none rounded-[12px]"
-					/>
 					<Slider
 						on:input={updateCurrentTime}
 						on:change={seekedVideo}

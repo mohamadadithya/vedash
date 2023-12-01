@@ -2,7 +2,7 @@ import { getContext, setContext } from 'svelte';
 import { writable, type Writable } from 'svelte/store';
 import { tweened, type Tweened } from 'svelte/motion';
 import { cubicOut } from 'svelte/easing';
-import type { ItemObject } from './types.js';
+import type { ItemObject } from '@types';
 
 const setStates = () => {
 	const currentTime: Tweened<number> = tweened(0, {
@@ -22,7 +22,6 @@ const setStates = () => {
 		quality: Writable<number | null> = writable(null),
 		isOnline: Writable<boolean> = writable(true),
 		isBuffering: Writable<boolean> = writable(false),
-		bufferedWidth: Tweened<number> = tweened(0),
 		isOpenPlaybackSettings: Writable<boolean> = writable(false),
 		qualities: Writable<ItemObject[]> = writable([]),
 		isCaptionsOn: Writable<boolean> = writable(false),
@@ -44,9 +43,7 @@ const setStates = () => {
 	setContext('quality', quality);
 	setContext('isOnline', isOnline);
 	setContext('isBuffering', isBuffering);
-	setContext('bufferedWidth', bufferedWidth),
-		setContext('isOpenPlaybackSettings', isOpenPlaybackSettings),
-		setContext('qualities', qualities);
+	setContext('isOpenPlaybackSettings', isOpenPlaybackSettings), setContext('qualities', qualities);
 	setContext('isCaptionsOn', isCaptionsOn);
 	setContext('activeCueText', activeCueText);
 	setContext('isLandscape', isLandscape);
@@ -69,7 +66,6 @@ const getStates = () => {
 		quality: getContext<Writable<number | null>>('quality'),
 		isOnline: getContext<Writable<boolean>>('isOnline'),
 		isBuffering: getContext<Writable<boolean>>('isBuffering'),
-		bufferedWidth: getContext<Tweened<number>>('bufferedWidth'),
 		isOpenPlaybackSettings: getContext<Writable<boolean>>('isOpenPlaybackSettings'),
 		qualities: getContext<Writable<ItemObject[]>>('qualities'),
 		isCaptionsOn: getContext<Writable<boolean>>('isCaptionsOn'),
