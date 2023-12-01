@@ -360,11 +360,19 @@
 	});
 
 	const handleMouseEnter = () => {
-		$isShowControls = true;
+		const query = window.matchMedia('(min-width: 1024px)');
+
+		if (query.matches) {
+			$isShowControls = true;
+		}
 	};
 
 	const handleMouseLeave = () => {
-		$isShowControls = false;
+		const query = window.matchMedia('(min-width: 1024px)');
+
+		if (query.matches) {
+			$isShowControls = false;
+		}
 	};
 </script>
 
