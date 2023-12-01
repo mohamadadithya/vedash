@@ -368,7 +368,7 @@
 	const handleMouseLeave = () => {
 		const query = window.matchMedia('(min-width: 1025px)');
 
-		if (query.matches) $isShowControls = false;
+		if (query.matches && !$isPaused) $isShowControls = false;
 	};
 </script>
 
