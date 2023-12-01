@@ -13,4 +13,8 @@ const formatDuration = (time: number) => {
 	}
 };
 
-export { formatDuration };
+const isTouchDevice = () => {
+	return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+};
+
+export { formatDuration, isTouchDevice };

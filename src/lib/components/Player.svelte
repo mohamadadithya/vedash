@@ -21,7 +21,7 @@
 		Captions,
 		CaptionsFilled
 	} from '@icons';
-	import { formatDuration } from '@utils';
+	import { formatDuration, isTouchDevice } from '@utils';
 	import { setStates, getStates } from '@context';
 	import type { Subtitle } from '@types';
 	import type IdleJs from 'idle-js';
@@ -298,12 +298,10 @@
 	};
 
 	const handleVideoClicked = () => {
-		const query = window.matchMedia('(min-width: 1025px)');
-
-		if (query.matches && !$isLandscape) {
-			togglePlay();
-		} else {
+		if (isTouchDevice()) {
 			$isShowControls = !$isShowControls;
+		} else {
+			togglePlay();
 		}
 	};
 
@@ -345,8 +343,7 @@
 				}
 			},
 			onActive: () => {
-				const query = window.matchMedia('(min-width: 1025px)');
-				if (query.matches) $isShowControls = true;
+				if (!isTouchDevice()) $isShowControls = true;
 			}
 		});
 
@@ -360,15 +357,11 @@
 	});
 
 	const handleMouseEnter = () => {
-		const query = window.matchMedia('(min-width: 1025px)');
-
-		if (query.matches) $isShowControls = true;
+		if (!isTouchDevice()) $isShowControls = true;
 	};
 
 	const handleMouseLeave = () => {
-		const query = window.matchMedia('(min-width: 1025px)');
-
-		if (query.matches) $isShowControls = false;
+		if (!isTouchDevice()) $isShowControls = false;
 	};
 </script>
 
@@ -438,7 +431,7 @@
 	{#if $isShowControls && $isLoaded}
 		<div transition:fade={{ duration: 150 }} class="vedash__controls text-white">
 			<MediaQuery query="(max-width: 1024px)" let:matches>
-				{#if matches || $isLandscape}
+				{#if matches || isTouchDevice()}
 					<button
 						on:click={() => ($isOpenPlaybackSettings = true)}
 						type="button"
@@ -539,7 +532,7 @@
 				class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent text-white"
 			>
 				<MediaQuery query="(max-width: 1024px)" let:matches>
-					{#if matches || $isLandscape}
+					{#if matches || isTouchDevice()}
 						<div class="flex items-center justify-between">
 							<p class="text-sm">
 								{formatDuration($currentTime)} / {formatDuration($totalDuration)}
