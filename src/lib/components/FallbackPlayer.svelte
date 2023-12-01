@@ -3,9 +3,7 @@
 
 	let videoEl: HTMLVideoElement, containerEl: HTMLDivElement;
 
-	const manifestUri = `https://bitmovin-a.akamaihd.net/content
-/MI201109210084_1
-/mpds/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.mpd`;
+	const manifestUri = `https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8`;
 
 	onMount(async () => {
 		const { default: shaka } = await import('shaka-player/dist/shaka-player.ui');
@@ -32,7 +30,7 @@
 <section class="grid place-items-center min-h-screen">
 	<!-- svelte-ignore a11y-media-has-caption -->
 	<div bind:this={containerEl} class="w-full max-w-3xl mx-auto">
-		<video class="w-full" bind:this={videoEl}></video>
+		<video class="w-full h-full" bind:this={videoEl}></video>
 	</div>
 </section>
 
