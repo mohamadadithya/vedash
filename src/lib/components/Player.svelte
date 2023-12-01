@@ -2,6 +2,7 @@
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import shaka, { type Player } from 'shaka-player';
+	import MediaQuery from 'svelte-media-queries';
 	import { CueText, MenuPanel, Slider, Select, Toggle } from '@components';
 	import {
 		CheckCircle,
@@ -20,7 +21,7 @@
 		Captions,
 		CaptionsFilled
 	} from '@icons';
-	import { formatDuration, isTouchDevice } from '@utils';
+	import { formatDuration } from '@utils';
 	import { setStates, getStates } from '@context';
 	import type { Subtitle } from '@types';
 	import type IdleJs from 'idle-js';
@@ -297,10 +298,12 @@
 	};
 
 	const handleVideoClicked = () => {
-		if (isTouchDevice()) {
-			$isShowControls = !$isShowControls;
-		} else {
+		const query = window.matchMedia('(min-width: 1025px)');
+
+		if (query.matches && !$isLandscape) {
 			togglePlay();
+		} else {
+			$isShowControls = !$isShowControls;
 		}
 	};
 
@@ -342,7 +345,8 @@
 				}
 			},
 			onActive: () => {
-				if (!isTouchDevice()) $isShowControls = true;
+				const query = window.matchMedia('(min-width: 1025px)');
+				if (query.matches) $isShowControls = true;
 			}
 		});
 
@@ -356,11 +360,15 @@
 	});
 
 	const handleMouseEnter = () => {
-		if (!isTouchDevice()) $isShowControls = true;
+		const query = window.matchMedia('(min-width: 1025px)');
+
+		if (query.matches) $isShowControls = true;
 	};
 
 	const handleMouseLeave = () => {
-		if (!isTouchDevice()) $isShowControls = false;
+		const query = window.matchMedia('(min-width: 1025px)');
+
+		if (query.matches) $isShowControls = false;
 	};
 </script>
 
@@ -429,74 +437,76 @@
 	{/if}
 	{#if $isShowControls && $isLoaded}
 		<div transition:fade={{ duration: 150 }} class="vedash__controls text-white">
-			{#if isTouchDevice()}
-				<button
-					on:click={() => ($isOpenPlaybackSettings = true)}
-					type="button"
-					class="absolute top-5 right-5"
-				>
-					<Settings class="w-5 h-5 md:w-6 md:h-6" />
-				</button>
-				{#if $isOpenPlaybackSettings}
-					<div
-						transition:fade={{ duration: 150 }}
-						role="dialog"
-						aria-labelledby="Playback settings"
-						aria-describedby="Custom dialog element for playback settings"
-						aria-modal={$isOpenPlaybackSettings}
-						class="w-full h-full fixed top-0 left-0 bg-black bg-opacity-40 z-[1] grid place-items-center text-black"
+			<MediaQuery query="(max-width: 1024px)" let:matches>
+				{#if matches || $isLandscape}
+					<button
+						on:click={() => ($isOpenPlaybackSettings = true)}
+						type="button"
+						class="absolute top-5 right-5"
 					>
-						<div class="bg-white p-5 w-full max-w-xs rounded-xl shadow-xl relative">
-							<p class="text-sm uppercase font-semibold mb-4">Playback Settings</p>
-							<button
-								on:click={() => {
-									$isOpenPlaybackSettings = false;
-									idleInstance.start();
-								}}
-								type="button"
-								class="absolute top-5 right-5"
-							>
-								<Close class="w-6 h-6" />
-							</button>
-							<div class="grid gap-4">
-								<Select
-									on:change={handleQuality}
-									label="Quality"
-									id="quality"
-									name="quality"
-									items={$qualities}
-									bind:value={$quality}
-								/>
-								<Select
-									on:change={setPlaybackSpeed}
-									label="Speed"
-									id="speed"
-									name="speed"
-									items={playbackSpeeds}
-									bind:value={$playbackSpeed}
-								/>
-								{#if subtitles.length > 0}
+						<Settings class="w-5 h-5 md:w-6 md:h-6" />
+					</button>
+					{#if $isOpenPlaybackSettings}
+						<div
+							transition:fade={{ duration: 150 }}
+							role="dialog"
+							aria-labelledby="Playback settings"
+							aria-describedby="Custom dialog element for playback settings"
+							aria-modal={$isOpenPlaybackSettings}
+							class="w-full h-full fixed top-0 left-0 bg-black bg-opacity-40 z-[1] grid place-items-center text-black"
+						>
+							<div class="bg-white p-5 w-full max-w-xs rounded-xl shadow-xl relative">
+								<p class="text-sm uppercase font-semibold mb-4">Playback Settings</p>
+								<button
+									on:click={() => {
+										$isOpenPlaybackSettings = false;
+										idleInstance.start();
+									}}
+									type="button"
+									class="absolute top-5 right-5"
+								>
+									<Close class="w-6 h-6" />
+								</button>
+								<div class="grid gap-4">
 									<Select
-										on:change={handleCaptions}
-										label="Captions"
-										id="captions"
-										name="captions"
-										items={captions}
-										bind:value={$selectedCaption}
+										on:change={handleQuality}
+										label="Quality"
+										id="quality"
+										name="quality"
+										items={$qualities}
+										bind:value={$quality}
 									/>
-								{/if}
-								<Toggle
-									id="loop-mode"
-									name="loop_mode"
-									label="Loop Mode"
-									on:change={toggleLoop}
-									bind:checked={$isLoopMode}
-								/>
+									<Select
+										on:change={setPlaybackSpeed}
+										label="Speed"
+										id="speed"
+										name="speed"
+										items={playbackSpeeds}
+										bind:value={$playbackSpeed}
+									/>
+									{#if subtitles.length > 0}
+										<Select
+											on:change={handleCaptions}
+											label="Captions"
+											id="captions"
+											name="captions"
+											items={captions}
+											bind:value={$selectedCaption}
+										/>
+									{/if}
+									<Toggle
+										id="loop-mode"
+										name="loop_mode"
+										label="Loop Mode"
+										on:change={toggleLoop}
+										bind:checked={$isLoopMode}
+									/>
+								</div>
 							</div>
 						</div>
-					</div>
+					{/if}
 				{/if}
-			{/if}
+			</MediaQuery>
 			{#if !$isBuffering}
 				<div
 					class="flex items-center justify-center gap-5 absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4"
@@ -528,25 +538,27 @@
 			<div
 				class="absolute bottom-0 w-full p-2.5 md:p-4 bg-gradient-to-t from-black to-transparent text-white"
 			>
-				{#if isTouchDevice()}
-					<div class="flex items-center justify-between">
-						<p class="text-sm">
-							{formatDuration($currentTime)} / {formatDuration($totalDuration)}
-						</p>
-						<button
-							title="Fullscreen"
-							type="button"
-							on:click={toggleFullscreen}
-							aria-label="Fullscreen"
-						>
-							{#if $isFullscreen}
-								<Minimize class="w-5 h-5 md:w-6 md:h-6" />
-							{:else}
-								<Fullscreen class="w-5 h-5 md:w-6 md:h-6" />
-							{/if}
-						</button>
-					</div>
-				{/if}
+				<MediaQuery query="(max-width: 1024px)" let:matches>
+					{#if matches || $isLandscape}
+						<div class="flex items-center justify-between">
+							<p class="text-sm">
+								{formatDuration($currentTime)} / {formatDuration($totalDuration)}
+							</p>
+							<button
+								title="Fullscreen"
+								type="button"
+								on:click={toggleFullscreen}
+								aria-label="Fullscreen"
+							>
+								{#if $isFullscreen}
+									<Minimize class="w-5 h-5 md:w-6 md:h-6" />
+								{:else}
+									<Fullscreen class="w-5 h-5 md:w-6 md:h-6" />
+								{/if}
+							</button>
+						</div>
+					{/if}
+				</MediaQuery>
 				<div class="relative">
 					<Slider
 						on:input={updateCurrentTime}
@@ -561,100 +573,102 @@
 						bind:value={$currentTime}
 					/>
 				</div>
-				{#if !isTouchDevice()}
-					<div class="flex items-center justify-between text-white mt-2">
-						<div class="flex items-center">
-							<div class="flex items-center mr-3">
-								<button class="mr-2.5" type="button" on:click={toggleMute} title="Mute">
-									{#if $isMuted || $volume === 0}
-										<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
-									{:else if $volume > 0.5}
-										<Volume2 class="w-5 h-5 md:w-6 md:h-6" />
-									{:else if $volume <= 0.5}
-										<Volume1 class="w-5 h-5 md:w-6 md:h-6" />
-									{/if}
-								</button>
-								<Slider
-									--primaryColor="#FFFFFF"
-									on:input={updateVolume}
-									class="max-w-[5rem] rounded-xl bg-white"
-									label="Volume slider"
-									name="volume"
-									id="volume"
-									step={0.1}
-									min={0}
-									max={1}
-									bind:value={$volume}
-								/>
-							</div>
-							<p class="text-sm">
-								{formatDuration($currentTime)} / {formatDuration($totalDuration)}
-							</p>
-						</div>
-						<div class="flex items-center gap-5">
-							<button
-								type="button"
-								on:click={toggleLoop}
-								aria-label="Loop"
-								class="relative"
-								title="Loop"
-							>
-								{#if $isLoopMode}
-									<CheckCircle
-										class="w-3 h-3 md:w-4 md:h-4 fill-white stroke-black absolute -top-1 right-0"
+				<MediaQuery query="(min-width: 1025px)" let:matches>
+					{#if matches && !$isLandscape}
+						<div class="flex items-center justify-between text-white mt-2">
+							<div class="flex items-center">
+								<div class="flex items-center mr-3">
+									<button class="mr-2.5" type="button" on:click={toggleMute} title="Mute">
+										{#if $isMuted || $volume === 0}
+											<VolumeX class="w-5 h-5 md:w-6 md:h-6" />
+										{:else if $volume > 0.5}
+											<Volume2 class="w-5 h-5 md:w-6 md:h-6" />
+										{:else if $volume <= 0.5}
+											<Volume1 class="w-5 h-5 md:w-6 md:h-6" />
+										{/if}
+									</button>
+									<Slider
+										--primaryColor="#FFFFFF"
+										on:input={updateVolume}
+										class="max-w-[5rem] rounded-xl bg-white"
+										label="Volume slider"
+										name="volume"
+										id="volume"
+										step={0.1}
+										min={0}
+										max={1}
+										bind:value={$volume}
 									/>
-								{/if}
-								<Loop class="w-5 h-5 md:w-6 md:h-6" />
-							</button>
-							<MenuPanel
-								bind:value={$playbackSpeed}
-								title="Speed"
-								items={playbackSpeeds}
-								on:change={setPlaybackSpeed}
-							>
-								<span slot="trigger-button" class="font-semibold text-base md:text-lg">1x</span>
-							</MenuPanel>
-							{#if subtitles.length > 0}
+								</div>
+								<p class="text-sm">
+									{formatDuration($currentTime)} / {formatDuration($totalDuration)}
+								</p>
+							</div>
+							<div class="flex items-center gap-5">
+								<button
+									type="button"
+									on:click={toggleLoop}
+									aria-label="Loop"
+									class="relative"
+									title="Loop"
+								>
+									{#if $isLoopMode}
+										<CheckCircle
+											class="w-3 h-3 md:w-4 md:h-4 fill-white stroke-black absolute -top-1 right-0"
+										/>
+									{/if}
+									<Loop class="w-5 h-5 md:w-6 md:h-6" />
+								</button>
 								<MenuPanel
-									bind:value={$selectedCaption}
-									on:change={handleCaptions}
-									title="Captions"
-									items={captions}
+									bind:value={$playbackSpeed}
+									title="Speed"
+									items={playbackSpeeds}
+									on:change={setPlaybackSpeed}
+								>
+									<span slot="trigger-button" class="font-semibold text-base md:text-lg">1x</span>
+								</MenuPanel>
+								{#if subtitles.length > 0}
+									<MenuPanel
+										bind:value={$selectedCaption}
+										on:change={handleCaptions}
+										title="Captions"
+										items={captions}
+									>
+										<div slot="trigger-button">
+											{#if $isCaptionsOn}
+												<CaptionsFilled class="w-5 h-5 md:w-6 md:h-6" />
+											{:else}
+												<Captions class="w-5 h-5 md:w-6 md:h-6" />
+											{/if}
+										</div>
+									</MenuPanel>
+								{/if}
+								<MenuPanel
+									bind:value={$quality}
+									on:change={handleQuality}
+									title="Quality"
+									items={$qualities}
 								>
 									<div slot="trigger-button">
-										{#if $isCaptionsOn}
-											<CaptionsFilled class="w-5 h-5 md:w-6 md:h-6" />
-										{:else}
-											<Captions class="w-5 h-5 md:w-6 md:h-6" />
-										{/if}
+										<Settings class="w-5 h-5 md:w-6 md:h-6" />
 									</div>
 								</MenuPanel>
-							{/if}
-							<MenuPanel
-								bind:value={$quality}
-								on:change={handleQuality}
-								title="Quality"
-								items={$qualities}
-							>
-								<div slot="trigger-button">
-									<Settings class="w-5 h-5 md:w-6 md:h-6" />
-								</div>
-							</MenuPanel>
-							<button
-								title="Fullscreen"
-								type="button"
-								on:click={toggleFullscreen}
-								aria-label="Fullscreen"
-							>
-								{#if $isFullscreen}
-									<Minimize class="w-5 h-5 md:w-6 md:h-6" />
-								{:else}
-									<Fullscreen class="w-5 h-5 md:w-6 md:h-6" />
-								{/if}
-							</button>
+								<button
+									title="Fullscreen"
+									type="button"
+									on:click={toggleFullscreen}
+									aria-label="Fullscreen"
+								>
+									{#if $isFullscreen}
+										<Minimize class="w-5 h-5 md:w-6 md:h-6" />
+									{:else}
+										<Fullscreen class="w-5 h-5 md:w-6 md:h-6" />
+									{/if}
+								</button>
+							</div>
 						</div>
-					</div>
-				{/if}
+					{/if}
+				</MediaQuery>
 			</div>
 		</div>
 	{/if}
