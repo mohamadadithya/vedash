@@ -298,7 +298,7 @@
 	};
 
 	const handleVideoClicked = () => {
-		const query = window.matchMedia('(min-width: 1024px)');
+		const query = window.matchMedia('(min-width: 1025px)');
 
 		if (query.matches && !$isLandscape) {
 			togglePlay();
@@ -345,7 +345,7 @@
 				}
 			},
 			onActive: () => {
-				const query = window.matchMedia('(min-width: 1024px)');
+				const query = window.matchMedia('(min-width: 1025px)');
 				if (query.matches) $isShowControls = true;
 			}
 		});
@@ -360,19 +360,15 @@
 	});
 
 	const handleMouseEnter = () => {
-		const query = window.matchMedia('(min-width: 1024px)');
+		const query = window.matchMedia('(min-width: 1025px)');
 
-		if (query.matches) {
-			$isShowControls = true;
-		}
+		if (query.matches) $isShowControls = true;
 	};
 
 	const handleMouseLeave = () => {
-		const query = window.matchMedia('(min-width: 1024px)');
+		const query = window.matchMedia('(min-width: 1025px)');
 
-		if (query.matches) {
-			$isShowControls = false;
-		}
+		if (query.matches) $isShowControls = false;
 	};
 </script>
 
@@ -577,7 +573,7 @@
 						bind:value={$currentTime}
 					/>
 				</div>
-				<MediaQuery query="(min-width: 1024px)" let:matches>
+				<MediaQuery query="(min-width: 1025px)" let:matches>
 					{#if matches && !$isLandscape}
 						<div class="flex items-center justify-between text-white mt-2">
 							<div class="flex items-center">
