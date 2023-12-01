@@ -331,8 +331,8 @@
 	const handleMousemove = (event: MouseEvent) => {
 		const query = window.matchMedia('(min-width: 1024px)');
 		const targetEl = event.target as HTMLElement;
-		const videoEl = targetEl.closest('.vedash__video') as HTMLVideoElement;
-		const controlsEl = targetEl.closest('.vedash__controls') as HTMLDivElement;
+		const videoEl = targetEl?.closest('.vedash__video') as HTMLVideoElement;
+		const controlsEl = targetEl?.closest('.vedash__controls') as HTMLDivElement;
 
 		if (!videoEl && !controlsEl && !$isPaused) {
 			$isShowControls = false;
