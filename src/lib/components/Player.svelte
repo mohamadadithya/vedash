@@ -309,7 +309,8 @@
 
 	const initPlayer = async () => {
 		initShaka();
-		await initShakaInstance().finally(() => ($isLoaded = true));
+		await initShakaInstance();
+		$isLoaded = true;
 	};
 
 	const handleOrientation = () => ($isLandscape = screen.orientation.type.startsWith('landscape'));
@@ -325,19 +326,6 @@
 			$isCaptionsOn = true;
 		} else {
 			$isCaptionsOn = false;
-		}
-	};
-
-	const handleMousemove = (event: MouseEvent) => {
-		const query = window.matchMedia('(min-width: 1024px)');
-		const targetEl = event.target as HTMLElement;
-		const videoEl = targetEl?.closest('.vedash__video') as HTMLVideoElement;
-		const controlsEl = targetEl?.closest('.vedash__controls') as HTMLDivElement;
-
-		if (!videoEl && !controlsEl && !$isPaused) {
-			$isShowControls = false;
-		} else {
-			if (query.matches && !$isLandscape) $isShowControls = true;
 		}
 	};
 
@@ -370,6 +358,14 @@
 		if (playerInstance) playerInstance.destroy();
 		if (idleInstance) idleInstance.reset().stop();
 	});
+
+	const handleMouseEnter = () => {
+		$isShowControls = true;
+	};
+
+	const handleMouseLeave = () => {
+		$isShowControls = false;
+	};
 </script>
 
 <svelte:window
@@ -377,10 +373,11 @@
 	on:online={updateOnlineStatus}
 	on:offline={updateOnlineStatus}
 	on:orientationchange={handleOrientation}
-	on:mousemove={handleMousemove}
 />
 
 <div
+	on:mouseenter={handleMouseEnter}
+	on:mouseleave={handleMouseLeave}
 	bind:this={playerEl}
 	class="vedash relative overflow-hidden {className}"
 	on:fullscreenchange={updateFullscreenState}
